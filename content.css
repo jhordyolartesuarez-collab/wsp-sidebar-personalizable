@@ -50,6 +50,15 @@ html[data-wsp-mode="auto"] body [data-wsp-sidebar="true"]:focus-within {
   min-width: var(--wsp-sidebar-width) !important;
   max-width: var(--wsp-sidebar-width) !important;
   flex-basis: var(--wsp-sidebar-width) !important;
+  transition-delay: 150ms !important;
+}
+
+/* Auto: cambio instantáneo pero con demora, para que cruzar la lista con el
+   cursor no la abra por accidente (150ms) ni salir un instante la cierre
+   (350ms). Duración 0: sin animar el layout de WhatsApp cuadro a cuadro. */
+html[data-wsp-mode="auto"] body [data-wsp-sidebar="true"] {
+  transition: width 0s, min-width 0s, max-width 0s, flex-basis 0s !important;
+  transition-delay: 350ms !important;
 }
 
 /* Botón discreto: sin relleno verde permanente, sin sombra, hover circular
@@ -150,7 +159,21 @@ html[data-wsp-mode="auto"] body [data-wsp-sidebar="true"]:focus-within {
   border-color: rgba(33, 192, 99, .35);
   color: var(--wsp-accent);
 }
-#wsp-sidebar-panel .wsp-hint { margin: 7px 0 0; color: var(--wsp-text-secondary); font-size: 12px; }
+#wsp-sidebar-panel .wsp-hint { margin: 7px 0 0; color: var(--wsp-text-secondary); font-size: 12px; min-height: 2.8em; }
+
+/* Didáctico: atenúa el control que no afecta a la vista elegida (sigue
+   usable para dejarlo preparado). */
+#wsp-sidebar-panel .wsp-field { transition: opacity 120ms ease; }
+#wsp-sidebar-panel .wsp-field + .wsp-field { margin-top: 10px; }
+#wsp-sidebar-panel[data-mode="normal"] .wsp-field[data-field="collapsed"],
+#wsp-sidebar-panel[data-mode="icons"] .wsp-field[data-field="width"] { opacity: .4; }
+#wsp-sidebar-panel .wsp-reset {
+  margin-top: 12px; width: 100%; padding: 6px; border: 1px solid var(--wsp-panel-border);
+  border-radius: 8px; background: transparent; color: var(--wsp-text-secondary);
+  font: inherit; font-size: 12px; cursor: pointer;
+}
+#wsp-sidebar-panel .wsp-reset:hover { background: var(--wsp-panel-hover); color: var(--wsp-text-primary); }
+#wsp-sidebar-panel .wsp-reset:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 1px; }
 
 
 /* El chat abierto absorbe el espacio liberado. La línea divisoria pertenece al

@@ -194,13 +194,22 @@
     panel.querySelector('#wsp-width-value').textContent = `${state.width}px`;
     panel.querySelector('#wsp-collapsed-value').textContent = `${state.collapsed}px`;
     panel.querySelectorAll('[data-mode]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.mode === state.mode)));
-    panel.querySelector('#wsp-auto-hint').hidden = state.mode !== 'auto';
+    panel.dataset.mode = state.mode;
+    panel.querySelector('#wsp-mode-hint').textContent = MODE_HINTS[state.mode];
   }
 
-  async function save(partial) {
+  const MODE_HINTS = {
+    normal: 'La lista siempre muestra nombres y mensajes con el ancho elegido.',
+    icons: 'Solo se ven las fotos. Ideal para dar más espacio a la conversación.',
+    auto: 'Se ve compacta y se abre sola al pasar el cursor sobre ella.'
+  };
+
+  // Aplica al instante; persiste solo cuando se pide (evita superar la cuota
+  // de escrituras de storage.sync mientras se arrastra un slider).
+  function save(partial, persist = true) {
     Object.assign(state, partial);
     applySettings();
-    await chrome.storage.sync.set(partial);
+    if (persist) chrome.storage.sync.set(partial).catch(() => {});
   }
 
   function placeRailControl() {
@@ -264,25 +273,31 @@
         <button type="button" class="wsp-close" aria-label="Cerrar">×</button>
       </div>
       <div class="wsp-section">
-        <div class="wsp-row-label">
-          <label for="wsp-width">Ancho de la lista</label>
-          <span class="wsp-value" id="wsp-width-value"></span>
+        <span class="wsp-row-label" id="wsp-mode-label">1. Elige cómo ver la lista</span>
+        <div class="wsp-segmented" role="group" aria-labelledby="wsp-mode-label">
+          <button type="button" class="wsp-seg" data-mode="normal" aria-pressed="false" title="Lista completa con ancho fijo">Fijo</button>
+          <button type="button" class="wsp-seg" data-mode="icons" aria-pressed="false" title="Solo fotos de los chats">Iconos</button>
+          <button type="button" class="wsp-seg" data-mode="auto" aria-pressed="false" title="Compacta, se abre al pasar el cursor">Auto</button>
         </div>
-        <input id="wsp-width" type="range" min="180" max="620" step="10">
-        <div class="wsp-row-label">
-          <label for="wsp-collapsed">Ancho en iconos</label>
-          <span class="wsp-value" id="wsp-collapsed-value"></span>
-        </div>
-        <input id="wsp-collapsed" type="range" min="72" max="120" step="2" aria-label="Ancho en iconos">
+        <p class="wsp-hint" id="wsp-mode-hint" aria-live="polite"></p>
       </div>
       <div class="wsp-section">
-        <span class="wsp-row-label" id="wsp-mode-label">Vista</span>
-        <div class="wsp-segmented" role="group" aria-labelledby="wsp-mode-label">
-          <button type="button" class="wsp-seg" data-mode="normal" aria-pressed="false">Fijo</button>
-          <button type="button" class="wsp-seg" data-mode="icons" aria-pressed="false">Iconos</button>
-          <button type="button" class="wsp-seg" data-mode="auto" aria-pressed="false">Auto</button>
+        <span class="wsp-row-label">2. Ajusta el tamaño</span>
+        <div class="wsp-field" data-field="width">
+          <div class="wsp-row-label">
+            <label for="wsp-width">Ancho de la lista</label>
+            <span class="wsp-value" id="wsp-width-value"></span>
+          </div>
+          <input id="wsp-width" type="range" min="180" max="620" step="10">
         </div>
-        <p class="wsp-hint" id="wsp-auto-hint" hidden>Se expande al acercar el cursor.</p>
+        <div class="wsp-field" data-field="collapsed">
+          <div class="wsp-row-label">
+            <label for="wsp-collapsed">Ancho en iconos</label>
+            <span class="wsp-value" id="wsp-collapsed-value"></span>
+          </div>
+          <input id="wsp-collapsed" type="range" min="72" max="120" step="2">
+        </div>
+        <button type="button" class="wsp-reset">Restablecer valores</button>
       </div>`;
 
     document.body.append(trigger, panel);
@@ -305,10 +320,22 @@
 
     trigger.addEventListener('click', () => { panel.hidden ? openPanel() : closePanel(); });
     panel.querySelector('.wsp-close').addEventListener('click', () => { closePanel(); trigger.focus(); });
-    panel.querySelector('#wsp-width').addEventListener('input', e => save({ width: clamp(e.target.value, 180, 620) }));
-    panel.querySelector('#wsp-collapsed').addEventListener('input', e => save({ collapsed: clamp(e.target.value, 72, 120) }));
+    const width = panel.querySelector('#wsp-width');
+    const collapsed = panel.querySelector('#wsp-collapsed');
+    width.addEventListener('input', () => save({ width: clamp(width.value, 180, 620) }, false));
+    width.addEventListener('change', () => save({ width: clamp(width.value, 180, 620) }));
+    collapsed.addEventListener('input', () => save({ collapsed: clamp(collapsed.value, 72, 120) }, false));
+    collapsed.addEventListener('change', () => save({ collapsed: clamp(collapsed.value, 72, 120) }));
     panel.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => save({ mode: btn.dataset.mode })));
-    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden) { closePanel(); trigger.focus(); } });
+    panel.querySelector('.wsp-reset').addEventListener('click', () => save({ ...DEFAULTS }));
+    // Captura + stopPropagation: Esc cierra solo el panel, no el chat abierto de WhatsApp.
+    window.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !panel.hidden) { e.stopPropagation(); closePanel(); trigger.focus(); }
+    }, true);
+    // Clic fuera del panel lo cierra, para que nunca quede tapando la lista.
+    document.addEventListener('pointerdown', e => {
+      if (!panel.hidden && !panel.contains(e.target) && !trigger.contains(e.target)) closePanel();
+    }, true);
     updateUI();
   }
 
