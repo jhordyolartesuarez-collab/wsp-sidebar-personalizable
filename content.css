@@ -277,3 +277,45 @@ html body [data-wsp-main="true"] {
   margin-inline-start: 0 !important;
   transform: none !important;
 }
+
+
+/* ===== v1.1.0 Modo celular (ventana <= 760px) =====
+   Un solo panel a la vez, como en el teléfono. data-wsp-mobile y
+   data-wsp-view los mantiene updateView() en content.js. Los selectores
+   llevan [data-wsp-mode] para igualar/superar la especificidad de los
+   modos Fijo/Iconos/Auto (incluido :hover) y van al final para ganar. */
+html[data-wsp-mobile="true"],
+html[data-wsp-mobile="true"] body { overflow-x: hidden !important; }
+html[data-wsp-mobile="true"] #app,
+html[data-wsp-mobile="true"] body [data-wsp-layout="true"],
+html[data-wsp-mobile="true"] body [data-wsp-layout="true"] > * { min-width: 0 !important; }
+
+/* Lista: ocupa todo el ancho disponible, sin modos compactos. */
+html[data-wsp-mobile="true"][data-wsp-mode] body [data-wsp-sidebar="true"] {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  flex: 1 1 auto !important;
+  transition: none !important;
+}
+html[data-wsp-mobile="true"][data-wsp-view="list"] body [data-wsp-main="true"] { display: none !important; }
+
+/* Chat: solo la conversación, sin lista ni barra lateral. */
+html[data-wsp-mobile="true"][data-wsp-view="chat"][data-wsp-mode] body [data-wsp-sidebar="true"],
+html[data-wsp-mobile="true"][data-wsp-view="chat"] body [data-wsp-rail="true"] { display: none !important; }
+html[data-wsp-mobile="true"][data-wsp-view="chat"] body [data-wsp-main="true"] {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  max-width: none !important;
+}
+
+/* Botón Volver: solo existe visualmente en modo celular. */
+#wsp-back { display: none; }
+html[data-wsp-mobile="true"] #wsp-back {
+  display: grid; place-items: center; flex: 0 0 auto;
+  width: 40px; height: 40px; margin-inline-end: 4px; padding: 0;
+  border: 0; border-radius: 999px; background: transparent;
+  color: var(--WDS-content-default, var(--wsp-text-primary)); cursor: pointer;
+}
+html[data-wsp-mobile="true"] #wsp-back:hover { background: var(--wsp-panel-hover); }
+html[data-wsp-mobile="true"] #wsp-back:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 1px; }

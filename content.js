@@ -89,11 +89,46 @@
   // no debe bloquear las etapas A/B.
   function findConversationPane(sidebarNode, layoutNode) {
     const nr = sidebarNode.getBoundingClientRect();
+    // En ventana angosta (modo celular) el panel puede medir menos de 300px.
+    const minWidth = mobileMQ.matches ? 120 : 300;
     const siblings = [...layoutNode.children].filter(el => el !== sidebarNode && hasLayout(el));
     return siblings.find(el => {
       const r = el.getBoundingClientRect();
-      return r.width >= 300 && r.left >= nr.right - 4;
+      return r.width >= minWidth && r.left >= nr.right - 4;
     }) || null;
+  }
+
+  // ---- Modo celular: un solo panel (lista O chat) en ventanas angostas ----
+  const mobileMQ = matchMedia('(max-width: 760px)');
+  let forceList = false;   // el usuario pulsó "Volver"
+  let lastMain = null;
+
+  function backIcon() {
+    return '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>';
+  }
+
+  function updateView() {
+    root.dataset.wspMobile = String(mobileMQ.matches);
+    const main = document.getElementById('main');
+    if (main !== lastMain) { forceList = false; lastMain = main; } // se abrió otro chat
+    root.dataset.wspView = main && !forceList ? 'chat' : 'list';
+  }
+
+  function ensureBackButton() {
+    const header = document.querySelector('#main header');
+    if (!header || header.querySelector('#wsp-back')) return;
+    const btn = document.createElement('button');
+    btn.id = 'wsp-back';
+    btn.type = 'button';
+    btn.title = 'Volver a la lista de chats';
+    btn.setAttribute('aria-label', 'Volver a la lista de chats');
+    btn.innerHTML = backIcon();
+    btn.addEventListener('click', e => {
+      e.stopPropagation(); // que no abra la info del contacto
+      forceList = true;
+      root.dataset.wspView = 'list';
+    });
+    header.prepend(btn);
   }
 
   function markDividerOwners(layoutNode, sidebarNode, mainNode) {
@@ -231,6 +266,13 @@
     }
     if (!rail) return;
 
+    // La columna completa de la barra (hijo directo del layout principal) se
+    // oculta en modo celular mientras se ve un chat, como en el teléfono.
+    const layout = document.querySelector('[data-wsp-layout="true"]');
+    let railColumn = rail;
+    while (railColumn.parentElement && railColumn.parentElement !== layout && railColumn.parentElement.id !== 'app') railColumn = railColumn.parentElement;
+    if (railColumn.parentElement === layout && !railColumn.hasAttribute('data-wsp-rail')) railColumn.setAttribute('data-wsp-rail', 'true');
+
     trigger.classList.add('wsp-in-rail');
     if (railChild.nextSibling !== trigger) rail.insertBefore(trigger, railChild.nextSibling);
   }
@@ -345,8 +387,20 @@
       if (!controlsBuilt) buildControls();
       markSidebar();
       placeRailControl();
+      ensureBackButton();
+      updateView();
     }, 120);
   }
+
+  mobileMQ.addEventListener('change', updateView);
+  // Tocar un chat de la lista (aunque sea el mismo que estaba abierto)
+  // vuelve a mostrar la conversación.
+  document.addEventListener('click', e => {
+    if (forceList && e.target instanceof Element && e.target.closest('#pane-side [role="row"], #pane-side [role="listitem"], #pane-side [role="gridcell"]')) {
+      forceList = false;
+      setTimeout(updateView, 50);
+    }
+  }, true);
 
   // Solo cuenta como "actividad estructural" lo que ocurre fuera de nuestros
   // propios controles; eso es lo único que el failsafe necesita vigilar para
