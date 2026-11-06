@@ -355,7 +355,8 @@ html[data-wsp-mobile="true"] div[role="application"]:has([data-testid="expressio
   right: 8px !important;
   width: auto !important;
   max-width: none !important;
-  max-height: 65vh !important;
+  /* Sin max-height: WhatsApp ya calcula el alto según la ventana y alinea el
+     contenido abajo, así que recortarlo cortaba la fila de pestañas. */
 }
 
 /* Botón de la extensión: si no pudo ubicarse en la barra, nunca flota sobre
@@ -388,3 +389,12 @@ html[data-wsp-mobile="true"] [data-wsp-fit="inner"] {
   max-width: 100% !important;
   min-width: 0 !important;
 }
+/* v1.2.0 Botón de ventana flotante (secundario, debajo de "Abrir como celular"). */
+#wsp-sidebar-panel .wsp-float {
+  width: 100%; margin-top: 4px; padding: 8px; border: 1px solid var(--wsp-panel-border);
+  border-radius: 8px; background: transparent; color: var(--wsp-text-primary);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+#wsp-sidebar-panel .wsp-float:hover { background: var(--wsp-panel-hover); }
+#wsp-sidebar-panel .wsp-float:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 2px; }
+#wsp-sidebar-panel .wsp-float-hint { min-height: 0; }

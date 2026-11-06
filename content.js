@@ -100,6 +100,29 @@
     }) || null;
   }
 
+  // ---- Ventana flotante (siempre encima) ----
+  // Document Picture-in-Picture es la única ventana que el navegador mantiene
+  // por encima de otras aplicaciones. Dentro se carga WhatsApp en un iframe
+  // (rules.json cambia X-Frame-Options DENY → SAMEORIGIN solo para WhatsApp),
+  // que al ser angosto usa el modo celular. WhatsApp admite una sola sesión
+  // activa: el iframe la toma y, al cerrarse, esta pestaña se recarga para
+  // recuperarla.
+  const IN_FRAME = window.top !== window;
+
+  async function openFloating() {
+    const pip = await window.documentPictureInPicture.requestWindow({ width: 420, height: 760 });
+    const d = pip.document;
+    d.title = 'WhatsApp';
+    const style = d.createElement('style');
+    style.textContent = 'html,body{margin:0;height:100%;background:#111b21;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}';
+    d.head.append(style);
+    const frame = d.createElement('iframe');
+    frame.src = `${location.origin}/`;
+    frame.allow = 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; display-capture';
+    d.body.append(frame);
+    pip.addEventListener('pagehide', () => location.reload(), { once: true });
+  }
+
   // ---- Modo celular: un solo panel (lista O chat) en ventanas angostas ----
   const mobileMQ = matchMedia('(max-width: 760px)');
   // El usuario pulsó "Volver". Solo se anula al tocar un chat de la lista o
@@ -296,7 +319,7 @@
     const phone = mobileMQ.matches;
     panel.querySelector('.wsp-phone').textContent = phone ? '🖥️ Volver a la vista normal' : '📱 Abrir como celular';
     panel.querySelector('.wsp-phone-hint').textContent = phone
-      ? 'Toca un chat para abrirlo y usa ← para volver. 📌 Para dejar esta ventana siempre encima: Win + Ctrl + T (requiere PowerToys de Microsoft).'
+      ? 'Toca un chat para abrirlo y usa ← para volver a la lista.'
       : 'Ancla WhatsApp al borde derecho de la pantalla, como un celular: lista y chat de uno en uno, con botón ← Volver.';
   }
 
@@ -418,10 +441,12 @@
         </div>
         <button type="button" class="wsp-reset">Restablecer valores</button>
       </div>
-      <div class="wsp-section">
+      <div class="wsp-section wsp-window-section"${IN_FRAME ? ' hidden' : ''}>
         <span class="wsp-row-label">3. Ventana tipo celular</span>
         <button type="button" class="wsp-phone"></button>
         <p class="wsp-hint wsp-phone-hint"></p>
+        <button type="button" class="wsp-float">📌 Ventana flotante (siempre encima)</button>
+        <p class="wsp-hint wsp-float-hint">Queda encima de cualquier aplicación, aunque cambies de programa. Al cerrarla, esta pestaña se recarga sola para retomar WhatsApp.</p>
       </div>`;
 
     document.body.append(trigger, panel);
@@ -458,6 +483,11 @@
         ? { cmd: 'desktop' }
         : { cmd: 'phone', screen: { w: screen.availWidth, h: screen.availHeight, l: screen.availLeft, t: screen.availTop } };
       chrome.runtime.sendMessage(msg).catch(() => {});
+    });
+    panel.querySelector('.wsp-float').addEventListener('click', () => {
+      openFloating().catch(() => {
+        panel.querySelector('.wsp-float-hint').textContent = 'Este navegador no permite ventanas flotantes (Picture-in-Picture). Usa "Abrir como celular".';
+      });
     });
     // Captura + stopPropagation: Esc cierra solo el panel, no el chat abierto de WhatsApp.
     window.addEventListener('keydown', e => {
