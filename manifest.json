@@ -5,7 +5,7 @@
   "description": "Personaliza el ancho, la vista compacta y la expansión automática de la lista de chats en WhatsApp Web.",
   "permissions": [
     "storage",
-    "declarativeNetRequest"
+    "declarativeNetRequestWithHostAccess"
   ],
   "host_permissions": [
     "https://web.whatsapp.com/*"

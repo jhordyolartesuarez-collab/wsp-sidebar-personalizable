@@ -27,7 +27,7 @@ Este almacenamiento se usa exclusivamente para conservar las preferencias visual
 ## Permisos utilizados
 
 - `storage`: guardar las tres preferencias descritas arriba.
-- `declarativeNetRequest`: solo para la **ventana flotante**. Cambia la cabecera `X-Frame-Options` de WhatsApp Web de `DENY` a `SAMEORIGIN` en cargas de subventana (`sub_frame`), para que WhatsApp pueda mostrarse dentro de su propia ventana Picture-in-Picture. `SAMEORIGIN` sigue impidiendo que cualquier otro sitio incruste WhatsApp. No lee ni modifica contenido.
+- `declarativeNetRequestWithHostAccess`: solo para la **ventana flotante**. Cambia la cabecera `X-Frame-Options` de WhatsApp Web de `DENY` a `SAMEORIGIN` en cargas de subventana (`sub_frame`), para que WhatsApp pueda mostrarse dentro de su propia ventana Picture-in-Picture. `SAMEORIGIN` sigue impidiendo que cualquier otro sitio incruste WhatsApp. No lee ni modifica contenido.
 - `https://web.whatsapp.com/*`: aplicar la personalización visual únicamente dentro de WhatsApp Web.
 
 ## Contacto del desarrollador

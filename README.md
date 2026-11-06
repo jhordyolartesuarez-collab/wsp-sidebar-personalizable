@@ -37,7 +37,7 @@ La barra vertical de accesos rápidos y la conversación abierta quedan fuera de
 
 ## Publicación en Chrome Web Store
 
-Suba el ZIP incluido desde el panel de desarrolladores. Complete ficha, capturas, categoría y datos del desarrollador (ver `STORE_LISTING_ES.md`). La extensión solicita `storage`, `declarativeNetRequest` (solo para la ventana flotante) y acceso a `https://web.whatsapp.com/*`.
+Suba el ZIP incluido desde el panel de desarrolladores. Complete ficha, capturas, categoría y datos del desarrollador (ver `STORE_LISTING_ES.md`). La extensión solicita `storage`, `declarativeNetRequestWithHostAccess` (solo para la ventana flotante) y acceso a `https://web.whatsapp.com/*`.
 
 ## Privacidad
 
@@ -46,7 +46,7 @@ Ver `PRIVACY.md`. Resumen: no se recopilan mensajes, contactos ni historial; no 
 ## Permisos
 
 - `storage`: guardar las preferencias de ancho y modo.
-- `declarativeNetRequest`: solo para la **ventana flotante**. Cambia la cabecera `X-Frame-Options` de WhatsApp Web de `DENY` a `SAMEORIGIN` en cargas de subventana (`sub_frame`), para que WhatsApp pueda mostrarse dentro de su propia ventana Picture-in-Picture. `SAMEORIGIN` sigue impidiendo que cualquier otro sitio incruste WhatsApp. No lee ni modifica contenido.
+- `declarativeNetRequestWithHostAccess`: solo para la **ventana flotante**. Cambia la cabecera `X-Frame-Options` de WhatsApp Web de `DENY` a `SAMEORIGIN` en cargas de subventana (`sub_frame`), para que WhatsApp pueda mostrarse dentro de su propia ventana Picture-in-Picture. `SAMEORIGIN` sigue impidiendo que cualquier otro sitio incruste WhatsApp. No lee ni modifica contenido.
 - `https://web.whatsapp.com/*`: aplicar la personalización únicamente dentro de WhatsApp Web.
 
 ## Compatibilidad

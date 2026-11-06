@@ -41,7 +41,7 @@ Personalizar visualmente el ancho y comportamiento de la lista de chats de Whats
 **Justificación del permiso `storage`:**
 Se usa exclusivamente para guardar tres preferencias de visualización del usuario (ancho general, ancho compacto y modo de vista) mediante `chrome.storage.sync`, de modo que persistan entre sesiones y dispositivos sincronizados. No se guarda ningún otro dato.
 
-**Justificación del permiso `declarativeNetRequest`:**
+**Justificación del permiso `declarativeNetRequestWithHostAccess`:**
 Se usa únicamente para la función "Ventana flotante": una regla estática cambia la cabecera `X-Frame-Options` de `web.whatsapp.com` de `DENY` a `SAMEORIGIN` en cargas de tipo `sub_frame`, para que WhatsApp Web pueda mostrarse dentro de su propia ventana Picture-in-Picture (siempre encima). `SAMEORIGIN` mantiene bloqueado que terceros incrusten WhatsApp. No se leen, recopilan ni modifican mensajes ni otros datos.
 
 **Justificación del host permission (`https://web.whatsapp.com/*`):**
