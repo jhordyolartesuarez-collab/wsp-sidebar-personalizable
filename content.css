@@ -333,8 +333,10 @@ html[data-wsp-mobile="true"] #wsp-back:focus-visible { outline: 2px solid var(--
 /* Canales, Estados, Comunidades, Ajustes, Archivados y Nuevo chat se abren
    en drawer-left, que WhatsApp fija al 30%: en celular ocupa todo el ancho
    junto a la barra. Su borde izquierdo era la línea gris residual. */
+/* flex-basis fijo: con flex:1 compartía espacio con un hermano invisible y
+   quedaba angosto. 64px = ancho de la barra de iconos (min-width nativo). */
 html[data-wsp-mobile="true"] [data-testid="drawer-left"] {
-  flex: 1 1 auto !important;
+  flex: 0 0 calc(100% - 64px) !important;
   width: auto !important;
   max-width: none !important;
   border-left: 0 !important;
@@ -345,13 +347,22 @@ html[data-wsp-mobile="true"][data-wsp-view="chat"] [data-testid="drawer-left"] {
 
 /* Emojis, GIF y stickers: el panel nativo mide 560px fijos anclado al botón
    y se salía por la izquierda. En celular ocupa el ancho de la ventana. */
+/* fixed: WhatsApp lo posiciona con left en línea respecto a un contenedor
+   desplazado; fijo a la ventana queda siempre dentro (sobre la caja de texto). */
 html[data-wsp-mobile="true"] div[role="application"]:has([data-testid="expressions-panel"]) {
+  position: fixed !important;
   left: 8px !important;
-  right: auto !important;
-  width: calc(100vw - 16px) !important;
+  right: 8px !important;
+  width: auto !important;
   max-width: none !important;
   max-height: 65vh !important;
 }
+
+/* Botón de la extensión: si no pudo ubicarse en la barra, nunca flota sobre
+   un chat abierto en modo celular. */
+html[data-wsp-mobile="true"][data-wsp-view="chat"] #wsp-sidebar-mini-control { display: none !important; }
+/* Al final de la sección superior de la barra (sin Meta AI), sin hueco extra. */
+#wsp-sidebar-mini-control.wsp-in-rail.wsp-in-primary { margin-top: 4px !important; }
 
 /* Info del contacto/grupo (drawer-right): pantalla completa sobre el chat
    en lugar de comprimir la conversación. Se cierra con su propia X. */

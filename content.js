@@ -238,7 +238,7 @@
     const phone = mobileMQ.matches;
     panel.querySelector('.wsp-phone').textContent = phone ? '🖥️ Volver a la vista normal' : '📱 Abrir como celular';
     panel.querySelector('.wsp-phone-hint').textContent = phone
-      ? 'Toca un chat para abrirlo y usa ← para volver a la lista.'
+      ? 'Toca un chat para abrirlo y usa ← para volver. 📌 Para dejar esta ventana siempre encima: Win + Ctrl + T (requiere PowerToys de Microsoft).'
       : 'Pasa WhatsApp a una ventana pequeña: lista y chat de uno en uno, con botón ← Volver.';
   }
 
@@ -259,9 +259,26 @@
   function placeRailControl() {
     const trigger = document.getElementById('wsp-sidebar-mini-control');
     if (!trigger) return;
+
+    // La columna de la barra (hijo del layout que contiene la navegación) se
+    // oculta en modo celular mientras se ve un chat, como en el teléfono.
+    const layout = document.querySelector('[data-wsp-layout="true"]');
+    const nav = document.querySelector('[data-testid="navbar-primary-section"]');
+    const railColumn = layout && nav && [...layout.children].find(c => c.contains(nav));
+    if (railColumn && !railColumn.hasAttribute('data-wsp-rail')) railColumn.setAttribute('data-wsp-rail', 'true');
+
     const all = [...document.querySelectorAll('button, [role="button"], [aria-label], [title]')];
     const meta = all.find(el => /meta\s*ai/i.test(`${el.getAttribute('aria-label') || ''} ${el.getAttribute('title') || ''} ${el.textContent || ''}`));
-    if (!meta) return;
+    if (!meta) {
+      // En ventanas pequeñas WhatsApp oculta Meta AI y Canales: se coloca al
+      // final de la sección superior de la barra.
+      const primary = document.querySelector('[data-testid="navbar-primary-section"]');
+      if (!primary) return;
+      trigger.classList.add('wsp-in-rail', 'wsp-in-primary');
+      if (primary.lastElementChild !== trigger) primary.append(trigger);
+      return;
+    }
+    trigger.classList.remove('wsp-in-primary');
     const metaItem = meta.closest('button, [role="button"]') || meta;
 
     /* El wrapper directo de Meta AI es una fila angosta (flex-row) dedicada a
@@ -274,13 +291,6 @@
       rail = rail.parentElement;
     }
     if (!rail) return;
-
-    // La columna completa de la barra (hijo directo del layout principal) se
-    // oculta en modo celular mientras se ve un chat, como en el teléfono.
-    const layout = document.querySelector('[data-wsp-layout="true"]');
-    let railColumn = rail;
-    while (railColumn.parentElement && railColumn.parentElement !== layout && railColumn.parentElement.id !== 'app') railColumn = railColumn.parentElement;
-    if (railColumn.parentElement === layout && !railColumn.hasAttribute('data-wsp-rail')) railColumn.setAttribute('data-wsp-rail', 'true');
 
     trigger.classList.add('wsp-in-rail');
     if (railChild.nextSibling !== trigger) rail.insertBefore(trigger, railChild.nextSibling);
