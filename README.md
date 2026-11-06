@@ -15,6 +15,7 @@ La barra vertical de accesos rápidos y la conversación abierta quedan fuera de
 - Botón de acceso discreto, insertado en la barra vertical de WhatsApp Web, debajo del icono de Meta AI.
 - Preferencias sincronizadas con `chrome.storage.sync`.
 - Sin analítica, anuncios, lectura ni transmisión de mensajes.
+- **Modo celular (v1.1.0):** desde el popup de la extensión, "📱 Abrir como celular" mueve la pestaña de WhatsApp Web a una ventana emergente de 420×820. En ventanas de 760 px o menos se muestra un solo panel (lista o chat) y la cabecera del chat incluye un botón **← Volver**. Al agrandar la ventana vuelve la vista normal.
 
 ## Cargar descomprimida
 

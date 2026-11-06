@@ -7,22 +7,22 @@
     "ast_empty": true
   },
   "content.js": {
-    "mtime": 1793932219.9952393,
-    "seen": 1793932252.8192375,
-    "ast_hash": "96fc69563ba0a7cbbb6e9b37ab8d800e",
+    "mtime": 1793932673.715578,
+    "seen": 1793932730.8542113,
+    "ast_hash": "d16db71f258aeb32bf16365a10f32d28",
     "semantic_hash": ""
   },
   "manifest.json": {
-    "mtime": 1793932246.9727013,
-    "seen": 1793932252.81924,
-    "ast_hash": "102abca6f3e745412962fbab65b2b141",
+    "mtime": 1793932706.977591,
+    "seen": 1793932730.8542144,
+    "ast_hash": "13af0a2c29e101b608530e3f6a72acf6",
     "semantic_hash": ""
   },
   "popup.js": {
-    "mtime": 1787371600.0230222,
-    "seen": 1793932055.8698473,
-    "ast_hash": "3ccb54b5246be43ecf738538fde2e752",
-    "semantic_hash": "3ccb54b5246be43ecf738538fde2e752"
+    "mtime": 1793932706.9755867,
+    "seen": 1793932730.8542159,
+    "ast_hash": "3d0125e8fd3021598660efce49d173ea",
+    "semantic_hash": ""
   },
   "CIERRE_PROYECTO.md": {
     "mtime": 1787548834.6239936,
@@ -43,9 +43,9 @@
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1787371600.1746955,
-    "seen": 1793932252.8192477,
-    "ast_hash": "27006d8a143a1b3206ff80adbfed5e76",
+    "mtime": 1793932729.3073404,
+    "seen": 1793932730.854222,
+    "ast_hash": "e44ffdb49cfb8dabba759c542efb1c55",
     "semantic_hash": ""
   },
   "STORE_LISTING_ES.md": {
@@ -55,9 +55,9 @@
     "semantic_hash": ""
   },
   "popup.html": {
-    "mtime": 1787371599.9556575,
-    "seen": 1793932252.8192494,
-    "ast_hash": "85c4e215a9a2b489bca7ba7f06fc5a72",
+    "mtime": 1793932706.974602,
+    "seen": 1793932730.8542244,
+    "ast_hash": "38c7694598e870d23afea0b04ca3f335",
     "semantic_hash": ""
   },
   "icons/icon128.png": {
