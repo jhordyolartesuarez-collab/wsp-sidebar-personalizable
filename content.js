@@ -120,8 +120,12 @@
     frame.src = `${location.origin}/`;
     frame.allow = 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; display-capture';
     d.body.append(frame);
-    pip.addEventListener('pagehide', () => location.reload(), { once: true });
+    pip.addEventListener('pagehide', () => {
+      chrome.runtime.sendMessage({ cmd: 'restore-opener' }).catch(() => {});
+      location.reload();
+    }, { once: true });
     coverTab(pip);
+    chrome.runtime.sendMessage({ cmd: 'hide-opener' }).catch(() => {}); // una sola ventana a la vista
   }
 
   // Mientras la flotante está abierta, esta pestaña mostraría la pantalla de
@@ -653,7 +657,7 @@
         <button type="button" class="wsp-phone"></button>
         <p class="wsp-hint wsp-phone-hint"></p>
         <button type="button" class="wsp-float">📌 Ventana flotante (siempre encima)</button>
-        <p class="wsp-hint wsp-float-hint">Queda encima de cualquier aplicación, aunque cambies de programa. Mientras esté abierta, esta pestaña queda en pausa; al cerrarla, WhatsApp vuelve aquí solo.</p>
+        <p class="wsp-hint wsp-float-hint">Queda encima de cualquier aplicación, aunque cambies de programa. Esta ventana se minimiza mientras tanto y vuelve sola al cerrar la flotante.</p>
       </div>`;
 
     document.body.append(trigger, panel);

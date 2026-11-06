@@ -4,7 +4,11 @@
   "2": "default_icon",
   "3": "buildControls",
   "4": "markSidebar",
+  "5": "closeOpenChat",
+  "6": "scheduleDetection",
   "7": "popup.js",
   "8": "background.js",
+  "9": "applySettings",
+  "10": "openFloating",
   "11": "content.js"
 }
