@@ -121,6 +121,24 @@
     frame.allow = 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; display-capture';
     d.body.append(frame);
     pip.addEventListener('pagehide', () => location.reload(), { once: true });
+    coverTab(pip);
+  }
+
+  // Mientras la flotante está abierta, esta pestaña mostraría la pantalla de
+  // WhatsApp "abierto en otra ventana · Usar aquí" (y pulsarla desconectaría
+  // la flotante). Se tapa con un aviso de una sola acción.
+  function coverTab(pip) {
+    const cover = document.createElement('div');
+    cover.id = 'wsp-float-cover';
+    cover.innerHTML = `
+      <div class="wsp-cover-box" role="dialog" aria-labelledby="wsp-cover-title">
+        <div class="wsp-cover-icon">📌</div>
+        <strong id="wsp-cover-title">WhatsApp está en la ventana flotante</strong>
+        <p>WhatsApp solo puede estar activo en un lugar a la vez, así que esta pestaña queda en pausa.</p>
+        <button type="button">Traer de vuelta a esta pestaña</button>
+      </div>`;
+    cover.querySelector('button').addEventListener('click', () => pip.close()); // pagehide → recarga
+    document.body.append(cover);
   }
 
   // ---- Modo celular: un solo panel (lista O chat) en ventanas angostas ----
@@ -446,7 +464,7 @@
         <button type="button" class="wsp-phone"></button>
         <p class="wsp-hint wsp-phone-hint"></p>
         <button type="button" class="wsp-float">📌 Ventana flotante (siempre encima)</button>
-        <p class="wsp-hint wsp-float-hint">Queda encima de cualquier aplicación, aunque cambies de programa. Al cerrarla, esta pestaña se recarga sola para retomar WhatsApp.</p>
+        <p class="wsp-hint wsp-float-hint">Queda encima de cualquier aplicación, aunque cambies de programa. Mientras esté abierta, esta pestaña queda en pausa; al cerrarla, WhatsApp vuelve aquí solo.</p>
       </div>`;
 
     document.body.append(trigger, panel);

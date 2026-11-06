@@ -2,9 +2,12 @@
   "0": "buildControls",
   "1": "manifest.json",
   "2": "default_icon",
-  "3": "scheduleDetection",
+  "3": "buildControls",
   "4": "content.js",
   "5": "icons",
+  "6": "content.js",
   "7": "popup.js",
-  "8": "background.js"
+  "8": "background.js",
+  "9": "closeOpenChat",
+  "10": "fitToViewport"
 }
