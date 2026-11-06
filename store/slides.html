@@ -89,6 +89,18 @@
   .tile .mini { position: absolute; right: 26px; bottom: -40px; width: 120px; height: 230px; border-radius: 18px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); padding: 14px 10px; }
   .tile .mini i { display: block; height: 18px; border-radius: 6px; background: #2a3942; margin-bottom: 10px; }
   .tile .mini i:nth-child(odd) { width: 70%; }
+
+  /* Mosaico con desplazamiento 1400×560 */
+  .marquee { display: none; width: 1400px; height: 560px; position: relative; overflow: hidden;
+             background: radial-gradient(900px 500px at 88% 10%, #12403f 0%, transparent 65%), radial-gradient(700px 400px at 0% 100%, #0f2a22 0%, transparent 60%), var(--bg); }
+  .marquee.on { display: block; }
+  .marquee .copy { left: 80px; width: 500px; }
+  .marquee .brand { display: flex; align-items: center; gap: 16px; margin-bottom: 22px; }
+  .marquee .brand .logo { width: 64px; height: 64px; border-radius: 18px; background: rgba(33,192,99,.16); display: grid; place-items: center; }
+  .marquee .brand b { font-size: 22px; }
+  .marquee h1 { font-size: 50px; margin-bottom: 26px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; }
+  .chips span { padding: 9px 16px; border-radius: 999px; background: rgba(255,255,255,.06); border: 1px solid var(--line); font-size: 16px; font-weight: 600; }
 </style>
 </head><body>
 
@@ -247,8 +259,39 @@
   <div class="mini"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
 </section>
 
+<!-- Mosaico promocional con desplazamiento 1400×560 -->
+<section class="marquee" id="marquee">
+  <div class="copy">
+    <div class="brand">
+      <div class="logo"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#21c063" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6A2.5 2.5 0 0 1 7 3.5h7A2.5 2.5 0 0 1 16.5 6v5A2.5 2.5 0 0 1 14 13.5H9.4l-3 2.4.3-2.5A2.5 2.5 0 0 1 4.5 11V6Z"/><circle cx="17.3" cy="16.7" r="2.6"/><path d="M17.3 12.9v.9M17.3 20.2v.9M21.4 16.7h-.9M14.1 16.7h-.9"/></svg></div>
+      <b>Chat Sidebar Adjuster</b>
+    </div>
+    <h1>WhatsApp Web, a tu medida</h1>
+    <div class="chips"><span>↔ Lista ajustable</span><span>📱 Modo celular</span><span>📌 Ventana flotante</span><span>← Gestos</span><span>🔒 Privado</span></div>
+  </div>
+  <div class="app" style="position:absolute; right:250px; top:70px; width:560px; height:420px; transform:scale(.95); transform-origin:top right; opacity:.9">
+    <div class="rail"><i class="me"></i><i></i><i></i><span class="gear">⚙</span></div>
+    <div class="list" style="width:220px">
+      <h3>Chats</h3><div class="search"></div>
+      <div class="row sel"><div class="av" style="background:#f6c177">AM</div><div class="meta"><b>Ana Morales</b><span>¿Nos vemos a las 6?</span></div></div>
+      <div class="row"><div class="av" style="background:#9ccfd8">LG</div><div class="meta"><b>Luis García</b><span>Listo, enviado 👍</span></div></div>
+      <div class="row"><div class="av" style="background:#c4a7e7">EQ</div><div class="meta"><b>Equipo Ventas</b><span>Reunión mañana</span></div></div>
+      <div class="row"><div class="av" style="background:#eb6f92">MR</div><div class="meta"><b>María Ríos</b><span>Foto</span></div></div>
+    </div>
+    <div class="chat"><div class="chead"><b>Ana Morales</b></div><div class="msgs"><div class="b">Hola! ¿Terminaste el informe?</div><div class="b out">Sí, te lo paso en un rato</div></div></div>
+  </div>
+  <div class="win phone" style="position:absolute; right:70px; top:40px; transform:scale(.74); transform-origin:top right">
+    <div class="bar">📌 Ventana flotante<span class="x">×</span></div>
+    <div class="screen chat">
+      <div class="chead"><span class="back">←</span><div class="av" style="background:#c4a7e7;width:34px;height:34px;flex-basis:34px">EQ</div><b>Equipo Ventas</b></div>
+      <div class="msgs"><div class="b">¿Alguien tiene las cifras de marzo?</div><div class="b out">Las estoy pasando al informe</div><div class="b">Genial, gracias</div></div>
+      <div class="composer">Escribe un mensaje</div>
+    </div>
+  </div>
+</section>
+
 <script>
   const s = new URLSearchParams(location.search).get('s') || '1';
-  document.getElementById(s === 'tile' ? 'tile' : `s${s}`).classList.add('on');
+  document.getElementById(['tile', 'marquee'].includes(s) ? s : `s${s}`).classList.add('on');
 </script>
 </body></html>

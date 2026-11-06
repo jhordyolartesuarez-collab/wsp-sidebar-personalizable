@@ -62,8 +62,9 @@ Español
 | Icono de la tienda | `icons/icon128.png` | 128 × 128 |
 | Capturas de pantalla (1 a 5) | `captura-1-panel.png` … `captura-5-privacidad.png` | 1280 × 800 |
 | Mosaico promocional pequeño | `mosaico-440x280.png` | 440 × 280 |
+| Mosaico promocional con desplazamiento | `mosaico-1400x560.png` | 1400 × 560 |
 
-Para regenerarlos: sirve el repo (`python -m http.server`), abre `store/slides.html?s=1` … `?s=5` en una ventana de 1280×800 (y `?s=tile` en 440×280) y captura la vista.
+Para regenerarlos: sirve el repo (`python -m http.server`), abre `store/slides.html?s=1` … `?s=5` en una ventana de 1280×800 (`?s=tile` en 440×280 y `?s=marquee` en 1400×560) y captura la vista.
 
 ---
 
