@@ -1,20 +1,21 @@
 // Mueve la pestaña de WhatsApp (sin recargarla ni abrir otra sesión) entre
 // una ventana tipo celular anclada al borde derecho y una ventana normal.
 const WA = 'https://web.whatsapp.com/';
-const PHONE_WIDTH = 420;
+// Área visible de un Samsung Galaxy S26 Ultra en píxeles CSS
+// (1440×3120 a densidad 3.5×). Debe coincidir con PHONE en content.js.
+const PHONE = { w: 412, h: 891 };
+// Bordes + barra de título de la ventana; varían según el sistema. Se
+// calibran solos la primera vez (ver 'phone-frame') y se recuerdan.
+const DEFAULT_FRAME = { w: 16, h: 39 };
 
 chrome.runtime.onMessage.addListener(async (msg, sender) => {
   if (!msg) return;
   if (msg.cmd === 'hide-opener') return hideOpener(sender.tab);
   if (msg.cmd === 'restore-opener') return restoreOpener(sender.tab);
+  if (msg.cmd === 'phone-frame') return calibratePhone(sender.tab, msg);
   if (msg.cmd !== 'phone' && msg.cmd !== 'desktop') return;
   const tabId = msg.tabId ?? sender.tab?.id;
-  const s = msg.screen; // área útil de la pantalla (sin barra de tareas)
-  const opts = msg.cmd === 'phone'
-    ? s
-      ? { type: 'popup', width: PHONE_WIDTH, height: s.h, left: s.l + s.w - PHONE_WIDTH, top: s.t }
-      : { type: 'popup', width: PHONE_WIDTH, height: 820 }
-    : { type: 'normal', state: 'maximized' };
+  const opts = msg.cmd === 'phone' ? await phoneBounds(msg.screen) : { type: 'normal', state: 'maximized' };
   if (tabId) {
     const tab = await chrome.tabs.get(tabId);
     if (tab.pinned) await chrome.tabs.update(tabId, { pinned: false });
@@ -22,8 +23,43 @@ chrome.runtime.onMessage.addListener(async (msg, sender) => {
   } else {
     opts.url = WA;
   }
-  await chrome.windows.create({ ...opts, focused: true });
+  const win = await chrome.windows.create({ ...opts, focused: true });
+  if (msg.cmd === 'phone') await chrome.storage.session.set({ [`phone-${win.id}`]: true });
 });
+
+// Ventana del tamaño del S26 Ultra, pegada al borde derecho y centrada en
+// vertical (sin pasarse del área útil de la pantalla).
+async function phoneBounds(s) {
+  const { frame = DEFAULT_FRAME } = await chrome.storage.local.get('frame');
+  const width = PHONE.w + frame.w;
+  const height = s ? Math.min(PHONE.h + frame.h, s.h) : PHONE.h + frame.h;
+  const bounds = { type: 'popup', width, height };
+  if (s) {
+    bounds.left = s.l + s.w - width;
+    bounds.top = s.t + Math.max(0, Math.round((s.h - height) / 2));
+  }
+  return bounds;
+}
+
+// El content script informa el área interior real; si no es 412×891 se
+// corrige el tamaño (manteniendo el borde derecho) y se guarda el marco.
+async function calibratePhone(tab, m) {
+  if (!tab) return;
+  const key = `phone-${tab.windowId}`;
+  const { [key]: isPhone } = await chrome.storage.session.get(key);
+  if (!isPhone) return;
+  await chrome.storage.session.remove(key); // una sola vez por ventana
+  if (m.iw === PHONE.w && m.ih === PHONE.h) return;
+  const frame = { w: m.fw, h: m.fh };
+  await chrome.storage.local.set({ frame });
+  const win = await chrome.windows.get(tab.windowId);
+  const width = PHONE.w + frame.w;
+  await chrome.windows.update(win.id, {
+    left: win.left + win.width - width,
+    width,
+    height: Math.min(PHONE.h + frame.h, m.sh || Infinity) // pantallas bajas: no salirse
+  });
+}
 
 // Ventana flotante abierta: la pestaña original debe seguir viva (la
 // flotante depende de ella), pero no a la vista. Si WhatsApp está solo en

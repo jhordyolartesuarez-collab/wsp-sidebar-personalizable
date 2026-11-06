@@ -108,9 +108,12 @@
   // activa: el iframe la toma y, al cerrarse, esta pestaña se recarga para
   // recuperarla.
   const IN_FRAME = window.top !== window;
+  // Área visible de un Samsung Galaxy S26 Ultra en píxeles CSS (1440×3120 a
+  // 3.5×). Debe coincidir con PHONE en background.js.
+  const PHONE = { w: 412, h: 891 };
 
   async function openFloating() {
-    const pip = await window.documentPictureInPicture.requestWindow({ width: 420, height: 760 });
+    const pip = await window.documentPictureInPicture.requestWindow({ width: PHONE.w, height: PHONE.h });
     const d = pip.document;
     d.title = 'WhatsApp';
     const style = d.createElement('style');
@@ -778,4 +781,23 @@
   startStructuralObserver();
   failsafeInterval = setInterval(checkFailsafe, 500);
   scheduleDetection();
+
+  // Ventana celular recién abierta: informa su área interior real para que
+  // el service worker la ajuste a 412×891 exactos (solo actúa en ventanas
+  // que él mismo abrió como celular).
+  // Se dispara al cargar y al pasar a modo celular (mover la pestaña a la
+  // ventana celular no recarga la página).
+  function reportFrame() {
+    if (IN_FRAME) return;
+    setTimeout(() => {
+      chrome.runtime.sendMessage({
+        cmd: 'phone-frame',
+        iw: innerWidth, ih: innerHeight,
+        fw: outerWidth - innerWidth, fh: outerHeight - innerHeight,
+        sh: screen.availHeight
+      }).catch(() => {});
+    }, 600);
+  }
+  reportFrame();
+  mobileMQ.addEventListener('change', () => { if (mobileMQ.matches) reportFrame(); });
 })();

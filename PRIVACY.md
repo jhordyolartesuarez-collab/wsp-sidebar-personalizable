@@ -1,6 +1,6 @@
 # Política de privacidad
 
-**Última actualización: 21 de agosto de 2026**
+**Última actualización: 5 de noviembre de 2026**
 
 **Chat Sidebar Adjuster for WhatsApp Web** es un proyecto independiente. No afiliado, respaldado ni patrocinado por WhatsApp LLC o Meta Platforms, Inc.
 
@@ -24,9 +24,14 @@
 
 Este almacenamiento se usa exclusivamente para conservar las preferencias visuales personales del usuario entre sesiones y dispositivos sincronizados con su cuenta de navegador. Ningún dato guardado se vende, comparte ni transmite a terceros.
 
+Además, solo para que las ventanas funcionen bien:
+
+- `chrome.storage.local` guarda el tamaño del marco de la ventana (bordes y barra de título, en px) para que la ventana celular mida exactamente 412 × 891 px.
+- `chrome.storage.session` guarda temporalmente si una ventana es la ventana celular y el estado de la ventana original mientras la ventana flotante está abierta; se borra al cerrar el navegador.
+
 ## Permisos utilizados
 
-- `storage`: guardar las tres preferencias descritas arriba.
+- `storage`: guardar las preferencias y los datos de ventana descritos arriba.
 - `declarativeNetRequestWithHostAccess`: solo para la **ventana flotante**. Cambia la cabecera `X-Frame-Options` de WhatsApp Web de `DENY` a `SAMEORIGIN` en cargas de subventana (`sub_frame`), para que WhatsApp pueda mostrarse dentro de su propia ventana Picture-in-Picture. `SAMEORIGIN` sigue impidiendo que cualquier otro sitio incruste WhatsApp. No lee ni modifica contenido.
 - `https://web.whatsapp.com/*`: aplicar la personalización visual únicamente dentro de WhatsApp Web.
 

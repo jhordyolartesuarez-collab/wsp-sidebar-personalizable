@@ -7,15 +7,15 @@
     "ast_empty": true
   },
   "content.js": {
-    "mtime": 1793938254.7633116,
-    "seen": 1793938267.6212344,
-    "ast_hash": "7936d18f5ec0295390a0d75cf7e67b0b",
+    "mtime": 1793938791.3073602,
+    "seen": 1793939332.8659825,
+    "ast_hash": "706813bb6103c923cb29f5dffd01bc01",
     "semantic_hash": ""
   },
   "manifest.json": {
-    "mtime": 1793938254.7633116,
-    "seen": 1793938267.6212356,
-    "ast_hash": "6f3de2b1e895d13083edb0bbb4734ffc",
+    "mtime": 1793939286.4862115,
+    "seen": 1793939332.865984,
+    "ast_hash": "d0fb40b3c16faf561ee33302ad3e5b6c",
     "semantic_hash": ""
   },
   "popup.js": {
@@ -37,21 +37,21 @@
     "semantic_hash": ""
   },
   "PRIVACY.md": {
-    "mtime": 1793936902.947826,
-    "seen": 1793937415.0984268,
-    "ast_hash": "9f0e05aff4b87491d3f6f50d247f58d7",
+    "mtime": 1793939286.4882104,
+    "seen": 1793939332.8659914,
+    "ast_hash": "0eec69fa460f9d45226065cf300e2175",
     "semantic_hash": ""
   },
   "README.md": {
-    "mtime": 1793936902.947826,
-    "seen": 1793937415.098428,
-    "ast_hash": "cf5cffac7d3b0cccd8265c08d075d76b",
+    "mtime": 1793939286.4882104,
+    "seen": 1793939332.8659925,
+    "ast_hash": "057d93498a9637555fe395379dec4b47",
     "semantic_hash": ""
   },
   "STORE_LISTING_ES.md": {
-    "mtime": 1793936902.947826,
-    "seen": 1793937415.098429,
-    "ast_hash": "185912fb569bcac109754cf341a81b4b",
+    "mtime": 1793939286.4872108,
+    "seen": 1793939332.8659933,
+    "ast_hash": "6c6347c826c1f4ca3c1ea5a362fb09dc",
     "semantic_hash": ""
   },
   "popup.html": {
@@ -85,9 +85,9 @@
     "semantic_hash": ""
   },
   "background.js": {
-    "mtime": 1793938244.6710885,
-    "seen": 1793938267.6212313,
-    "ast_hash": "8198a2483c22afc09fdc1e4204330fa5",
+    "mtime": 1793938772.415884,
+    "seen": 1793939332.8659794,
+    "ast_hash": "9f035873b7bf7e3bd71ff513b11f5022",
     "semantic_hash": ""
   },
   "rules.json": {
@@ -106,6 +106,48 @@
     "mtime": 1793937794.591304,
     "seen": 1793937897.590158,
     "ast_hash": "f61f279b51e559279fe8de0e91715120",
+    "semantic_hash": ""
+  },
+  "store/slides.html": {
+    "mtime": 1793939255.3343518,
+    "seen": 1793939332.865996,
+    "ast_hash": "a14aa17bbc775dc12c719a467827a9d2",
+    "semantic_hash": ""
+  },
+  "store/out/captura-1-panel.png": {
+    "mtime": 1793939231.467591,
+    "seen": 1793939332.8660035,
+    "ast_hash": "c92b8e80512c0ba3b2ded364127a2bce",
+    "semantic_hash": ""
+  },
+  "store/out/captura-2-celular.png": {
+    "mtime": 1793939255.5172486,
+    "seen": 1793939332.8660045,
+    "ast_hash": "5f1d3f11a861689c793b3e696d8eb646",
+    "semantic_hash": ""
+  },
+  "store/out/captura-3-flotante.png": {
+    "mtime": 1793939231.7935193,
+    "seen": 1793939332.8660054,
+    "ast_hash": "07ff844deb869fe6b648e0bbf7bcd490",
+    "semantic_hash": ""
+  },
+  "store/out/captura-4-gestos.png": {
+    "mtime": 1793939231.9492707,
+    "seen": 1793939332.8660069,
+    "ast_hash": "c80a117b19ed549857ca2a311fafcfae",
+    "semantic_hash": ""
+  },
+  "store/out/captura-5-privacidad.png": {
+    "mtime": 1793939232.0954742,
+    "seen": 1793939332.8660078,
+    "ast_hash": "4d5a922b1f0627642d9f965393056979",
+    "semantic_hash": ""
+  },
+  "store/out/mosaico-440x280.png": {
+    "mtime": 1793939238.6653144,
+    "seen": 1793939332.8660085,
+    "ast_hash": "bcccab996d2268b29319d378baf77985",
     "semantic_hash": ""
   }
 }
