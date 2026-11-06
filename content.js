@@ -158,7 +158,19 @@
     // principal (las pantallas vacías de bienvenida no tienen cabecera).
     const main = document.getElementById('main') || document.querySelector('[data-wsp-main="true"] header');
     if (!main) forceList = false; // ya no hay chat abierto
-    root.dataset.wspView = main && !forceList ? 'chat' : 'list';
+    const view = main && !forceList ? 'chat' : 'list';
+    if (view === 'chat' && root.dataset.wspView !== 'chat') focusComposer();
+    root.dataset.wspView = view;
+  }
+
+  // Modo celular: al pasar de la lista al chat, el cursor queda listo en
+  // "Escribe un mensaje" sin tener que hacer clic en la barra. (La lista y su
+  // buscador quedan ocultos, así que el foco no debe quedarse allí.)
+  function focusComposer(attempt = 0) {
+    if (!mobileMQ.matches || attempt > 10) return; // en escritorio WhatsApp ya lo hace solo
+    const box = document.querySelector('#main footer [contenteditable="true"]');
+    if (!box) { setTimeout(() => focusComposer(attempt + 1), 100); return; } // aún se está dibujando
+    requestAnimationFrame(() => { if (!box.contains(document.activeElement)) box.focus({ preventScroll: true }); });
   }
 
   // Cierra el chat en WhatsApp con Esc (atajo nativo) para que no quede
