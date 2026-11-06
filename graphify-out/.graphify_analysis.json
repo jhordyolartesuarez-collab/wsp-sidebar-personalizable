@@ -1,0 +1,195 @@
+{
+  "communities": {
+    "0": [
+      "content_applysettings",
+      "content_buildcontrols",
+      "content_buildcontrols_closepanel",
+      "content_buildcontrols_openpanel",
+      "content_chatgearicon",
+      "content_placerailcontrol",
+      "content_positionpanel",
+      "content_save",
+      "content_scheduledetection",
+      "content_updateui"
+    ],
+    "1": [
+      "manifest",
+      "manifest_content_scripts",
+      "manifest_description",
+      "manifest_host_permissions",
+      "manifest_manifest_version",
+      "manifest_name",
+      "manifest_permissions",
+      "manifest_version"
+    ],
+    "2": [
+      "manifest_action",
+      "manifest_action_default_icon",
+      "manifest_action_default_popup",
+      "manifest_action_default_title",
+      "manifest_default_icon_128",
+      "manifest_default_icon_16",
+      "manifest_default_icon_32",
+      "manifest_default_icon_48"
+    ],
+    "3": [
+      "content",
+      "content_findconversationpane",
+      "content_haslayout",
+      "content_isownmutation",
+      "content_startstructuralobserver"
+    ],
+    "4": [
+      "content_checkfailsafe",
+      "content_findpaneside",
+      "content_findstructuralsidebar",
+      "content_markdividerowners",
+      "content_marksidebar"
+    ],
+    "5": [
+      "manifest_icons",
+      "manifest_icons_128",
+      "manifest_icons_16",
+      "manifest_icons_32",
+      "manifest_icons_48"
+    ],
+    "6": [
+      "content_loadsettings",
+      "content_tryreveal"
+    ],
+    "7": [
+      "popup"
+    ]
+  },
+  "cohesion": {
+    "0": 0.26666666666666666,
+    "1": 0.25,
+    "2": 0.25,
+    "3": 0.6,
+    "4": 0.5,
+    "5": 0.4,
+    "6": 1.0,
+    "7": 1.0
+  },
+  "gods": [
+    {
+      "id": "content_buildcontrols",
+      "label": "buildControls()",
+      "degree": 8
+    },
+    {
+      "id": "content_marksidebar",
+      "label": "markSidebar()",
+      "degree": 8
+    },
+    {
+      "id": "content_scheduledetection",
+      "label": "scheduleDetection()",
+      "degree": 5
+    },
+    {
+      "id": "manifest_action_default_icon",
+      "label": "default_icon",
+      "degree": 5
+    },
+    {
+      "id": "manifest_icons",
+      "label": "icons",
+      "degree": 5
+    },
+    {
+      "id": "content_applysettings",
+      "label": "applySettings()",
+      "degree": 4
+    },
+    {
+      "id": "content_updateui",
+      "label": "updateUI()",
+      "degree": 4
+    },
+    {
+      "id": "content_checkfailsafe",
+      "label": "checkFailsafe()",
+      "degree": 4
+    },
+    {
+      "id": "content_findpaneside",
+      "label": "findPaneSide()",
+      "degree": 4
+    },
+    {
+      "id": "content_tryreveal",
+      "label": "tryReveal()",
+      "degree": 4
+    }
+  ],
+  "surprises": [
+    {
+      "source": "loadSettings()",
+      "target": "applySettings()",
+      "source_files": [
+        "content.js",
+        "content.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 → community 6"
+    },
+    {
+      "source": "scheduleDetection()",
+      "target": "markSidebar()",
+      "source_files": [
+        "content.js",
+        "content.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 → community 4"
+    },
+    {
+      "source": "startStructuralObserver()",
+      "target": "scheduleDetection()",
+      "source_files": [
+        "content.js",
+        "content.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 0 → community 3"
+    },
+    {
+      "source": "markSidebar()",
+      "target": "findConversationPane()",
+      "source_files": [
+        "content.js",
+        "content.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 3 → community 4"
+    },
+    {
+      "source": "checkFailsafe()",
+      "target": "tryReveal()",
+      "source_files": [
+        "content.js",
+        "content.js"
+      ],
+      "confidence": "EXTRACTED",
+      "relation": "calls",
+      "note": "Bridges community 4 → community 6"
+    }
+  ],
+  "questions": [
+    {
+      "type": "bridge_node",
+      "question": "Why does `action` connect `Community 2` to `Community 1`?",
+      "why": "High betweenness centrality (0.113) - this node is a cross-community bridge."
+    },
+    {
+      "type": "bridge_node",
+      "question": "Why does `icons` connect `Community 5` to `Community 1`?",
+      "why": "High betweenness centrality (0.078) - this node is a cross-community bridge."
+    }
+  ]
+}

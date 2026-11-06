@@ -1,0 +1,364 @@
+(() => {
+  'use strict';
+
+  const DEFAULTS = { width: 400, collapsed: 86, mode: 'normal' };
+  const state = { ...DEFAULTS };
+  const root = document.documentElement;
+
+  const BOOT_MAX_MS = 20000;
+  const BOOT_QUIET_MS = 3000;
+  const REDUCE_MOTION = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const PANEL_ANIM_MS = REDUCE_MOTION ? 0 : 170;
+
+  // Icono lineal propio (burbuja de chat + engranaje), sin cara ni logotipo
+  // oficial: mismo trazo/estilo que los iconos nativos de WhatsApp.
+  function chatGearIcon(size) {
+    return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 6A2.5 2.5 0 0 1 7 3.5h7A2.5 2.5 0 0 1 16.5 6v5A2.5 2.5 0 0 1 14 13.5H9.4l-3 2.4.3-2.5A2.5 2.5 0 0 1 4.5 11V6Z"/><circle cx="17.3" cy="16.7" r="2.6"/><path d="M17.3 12.9v.9M17.3 20.2v.9M21.4 16.7h-.9M14.1 16.7h-.9M20.1 14.1l-.65.65M15.15 18.35l-.65.65M20.1 19.3l-.65-.65M15.15 15.05l-.65-.65"/></svg>`;
+  }
+
+  let sidebar = null;
+  let structureObserver = null;
+  let settingsReady = false;
+  let structureReady = false;
+  let revealed = false;
+  let controlsBuilt = false;
+  let bootStartedAt = 0;
+  let lastStructuralActivityAt = 0;
+  let failsafeInterval = null;
+  let panelHideTimer = null;
+
+  const clamp = (n, min, max) => Math.min(max, Math.max(min, Number(n) || min));
+
+  function applySettings() {
+    root.style.setProperty('--wsp-sidebar-width', `${state.width}px`);
+    root.style.setProperty('--wsp-sidebar-collapsed', `${Math.min(state.collapsed, state.width)}px`);
+    if (root.dataset.wspMode !== state.mode) root.dataset.wspMode = state.mode;
+    updateUI();
+  }
+
+  async function loadSettings() {
+    const saved = await chrome.storage.sync.get(DEFAULTS);
+    state.width = clamp(saved.width, 180, 620);
+    state.collapsed = clamp(saved.collapsed, 72, 120);
+    state.mode = ['normal', 'icons', 'auto'].includes(saved.mode) ? saved.mode : 'normal';
+    applySettings();
+    settingsReady = true;
+    tryReveal();
+  }
+
+  // Geometría pura: a propósito NO exige visibility!=='hidden', porque
+  // #pane-side queda oculto por nuestra propia regla de arranque
+  // (html[data-wsp-booting] #pane-side) y aun así debe poder detectarse
+  // mientras está oculto. Exigir visibilidad real aquí crea un bloqueo
+  // circular (nunca se revela porque nunca se detecta oculto).
+  function hasLayout(el) {
+    if (!(el instanceof HTMLElement)) return false;
+    const r = el.getBoundingClientRect();
+    const s = getComputedStyle(el);
+    return r.width > 0 && r.height > 0 && s.display !== 'none';
+  }
+
+  // Etapa A: ancla estable, existe independientemente de si hay un chat abierto.
+  function findPaneSide() {
+    const list = document.querySelector(
+      '#pane-side, [data-testid="chat-list"], [aria-label="Chat list"], [aria-label="Lista de chats"]'
+    );
+    return list && hasLayout(list) ? list : null;
+  }
+
+  // Etapa B: columna estructural real dentro del layout horizontal. No
+  // depende de que exista un panel de conversación: solo de la geometría y
+  // el display del ancestro, ambos disponibles apenas WhatsApp pinta el
+  // esqueleto de la app.
+  function findStructuralSidebar(list) {
+    let node = list;
+    while (node && node.parentElement && node.id !== 'app') {
+      const parent = node.parentElement;
+      const nr = node.getBoundingClientRect();
+      const pd = getComputedStyle(parent);
+      const horizontalLayout = (pd.display === 'flex' && pd.flexDirection === 'row') || pd.display === 'grid';
+      if (horizontalLayout && nr.width >= 220 && nr.width <= 650) {
+        return { sidebar: node, layout: parent };
+      }
+      node = parent;
+    }
+    return null;
+  }
+
+  // Etapa C: panel principal (chat abierto). Puede no existir todavía; eso
+  // no debe bloquear las etapas A/B.
+  function findConversationPane(sidebarNode, layoutNode) {
+    const nr = sidebarNode.getBoundingClientRect();
+    const siblings = [...layoutNode.children].filter(el => el !== sidebarNode && hasLayout(el));
+    return siblings.find(el => {
+      const r = el.getBoundingClientRect();
+      return r.width >= 300 && r.left >= nr.right - 4;
+    }) || null;
+  }
+
+  function markDividerOwners(layoutNode, sidebarNode, mainNode) {
+    document.querySelectorAll('[data-wsp-divider-owner]').forEach(el => el.removeAttribute('data-wsp-divider-owner'));
+    const structural = [layoutNode, sidebarNode, mainNode];
+    let level = [mainNode];
+    for (let depth = 0; depth < 4; depth += 1) {
+      level = level.flatMap(el => [...el.children].filter(child => child instanceof HTMLElement));
+      structural.push(...level);
+    }
+    [...new Set(structural)].forEach(el => el.setAttribute('data-wsp-divider-owner', 'true'));
+  }
+
+  function markSidebar() {
+    const list = findPaneSide();
+    if (!list) return false;
+    if (!list.hasAttribute('data-wsp-chat-list')) list.setAttribute('data-wsp-chat-list', 'true');
+
+    const structural = findStructuralSidebar(list);
+    if (!structural) return false;
+
+    if (sidebar !== structural.sidebar) {
+      if (sidebar) sidebar.removeAttribute('data-wsp-sidebar');
+      sidebar = structural.sidebar;
+      sidebar.setAttribute('data-wsp-sidebar', 'true');
+      document.querySelectorAll('[data-wsp-layout="true"]').forEach(el => el.removeAttribute('data-wsp-layout'));
+      structural.layout.setAttribute('data-wsp-layout', 'true');
+    }
+
+    structureReady = true;
+    tryReveal();
+
+    // El chat abierto puede completarse más tarde, de forma idempotente,
+    // sin retrasar el marcado inicial del sidebar ni el reveal.
+    const conversation = findConversationPane(structural.sidebar, structural.layout);
+    if (conversation && !conversation.hasAttribute('data-wsp-main')) {
+      document.querySelectorAll('[data-wsp-main="true"]').forEach(el => el.removeAttribute('data-wsp-main'));
+      conversation.setAttribute('data-wsp-main', 'true');
+      markDividerOwners(structural.layout, structural.sidebar, conversation);
+    }
+
+    return true;
+  }
+
+  // Se retira data-wsp-booting solo cuando preferencias Y estructura están
+  // listas, para no mostrar nunca un ancho intermedio (nativo → normal → modo
+  // guardado). Doble rAF: confirma que el layout final ya se pintó antes de
+  // revelar.
+  function tryReveal() {
+    if (revealed || !settingsReady || !structureReady) return;
+    revealed = true;
+    if (failsafeInterval) clearInterval(failsafeInterval);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        root.removeAttribute('data-wsp-booting');
+        root.dataset.wspReady = 'true';
+      });
+    });
+  }
+
+  // Failsafe basado en progreso, no en un timeout fijo: solo actúa cuando
+  // pasaron BOOT_MAX_MS desde el arranque Y no hubo actividad estructural
+  // relevante en los últimos BOOT_QUIET_MS. Antes de revelar en estado
+  // nativo intenta un último marcado síncrono; si al menos #pane-side existe,
+  // lo usa como ancla de respaldo verificable en vez de revelar a ciegas.
+  function checkFailsafe() {
+    if (revealed) { clearInterval(failsafeInterval); return; }
+    const now = performance.now();
+    if (now - bootStartedAt < BOOT_MAX_MS) return;
+    if (now - lastStructuralActivityAt < BOOT_QUIET_MS) return;
+
+    if (markSidebar()) return; // tryReveal() ya corrió dentro de markSidebar()
+
+    const list = findPaneSide();
+    if (list) {
+      sidebar = list;
+      sidebar.setAttribute('data-wsp-sidebar', 'true');
+      structureReady = true;
+      console.warn('[WSP Sidebar] No se validó el contenedor estructural completo tras quedar quieto; se usa #pane-side como ancla de respaldo.');
+      tryReveal();
+      return;
+    }
+
+    console.warn('[WSP Sidebar] #pane-side no apareció tras quedar quieto; se muestra el estado nativo de WhatsApp.');
+    revealed = true;
+    clearInterval(failsafeInterval);
+    root.removeAttribute('data-wsp-booting');
+    root.dataset.wspReady = 'true';
+  }
+
+  function updateUI() {
+    const panel = document.getElementById('wsp-sidebar-panel');
+    if (!panel) return;
+    const width = panel.querySelector('#wsp-width');
+    const collapsed = panel.querySelector('#wsp-collapsed');
+    width.value = state.width;
+    collapsed.value = state.collapsed;
+    panel.querySelector('#wsp-width-value').textContent = `${state.width}px`;
+    panel.querySelector('#wsp-collapsed-value').textContent = `${state.collapsed}px`;
+    panel.querySelectorAll('[data-mode]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.mode === state.mode)));
+    panel.querySelector('#wsp-auto-hint').hidden = state.mode !== 'auto';
+  }
+
+  async function save(partial) {
+    Object.assign(state, partial);
+    applySettings();
+    await chrome.storage.sync.set(partial);
+  }
+
+  function placeRailControl() {
+    const trigger = document.getElementById('wsp-sidebar-mini-control');
+    if (!trigger) return;
+    const all = [...document.querySelectorAll('button, [role="button"], [aria-label], [title]')];
+    const meta = all.find(el => /meta\s*ai/i.test(`${el.getAttribute('aria-label') || ''} ${el.getAttribute('title') || ''} ${el.textContent || ''}`));
+    if (!meta) return;
+    const metaItem = meta.closest('button, [role="button"]') || meta;
+
+    /* El wrapper directo de Meta AI es una fila angosta (flex-row) dedicada a
+       ese único icono; insertar ahí produce superposición. La barra vertical
+       real es el ancestro flex-column con varios íconos hermanos. */
+    let railChild = metaItem;
+    let rail = railChild.parentElement;
+    while (rail && !(rail.children.length > 1 && getComputedStyle(rail).display === 'flex' && getComputedStyle(rail).flexDirection === 'column')) {
+      railChild = rail;
+      rail = rail.parentElement;
+    }
+    if (!rail) return;
+
+    trigger.classList.add('wsp-in-rail');
+    if (railChild.nextSibling !== trigger) rail.insertBefore(trigger, railChild.nextSibling);
+  }
+
+  // Coloca el panel pegado al botón que lo abrió (nunca en una esquina fija
+  // de la ventana), con cabida para que no se salga de la pantalla ni
+  // produzca scroll horizontal. Cálculo único al abrir, sin observers.
+  function positionPanel(panel, trigger) {
+    const r = trigger.getBoundingClientRect();
+    const margin = 10;
+    const pw = panel.offsetWidth;
+    const ph = panel.offsetHeight;
+    let left = r.right + 8;
+    if (left + pw + margin > window.innerWidth) left = Math.max(margin, r.left - pw - 8);
+    let top = r.top;
+    if (top + ph + margin > window.innerHeight) top = Math.max(margin, window.innerHeight - ph - margin);
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
+  }
+
+  function buildControls() {
+    if (controlsBuilt || !document.body || document.getElementById('wsp-sidebar-mini-control')) return;
+    controlsBuilt = true;
+
+    const trigger = document.createElement('button');
+    trigger.id = 'wsp-sidebar-mini-control';
+    trigger.type = 'button';
+    trigger.title = 'Ajustar lista de chats';
+    trigger.setAttribute('aria-label', 'Ajustar lista de chats');
+    trigger.innerHTML = chatGearIcon(22);
+
+    const panel = document.createElement('section');
+    panel.id = 'wsp-sidebar-panel';
+    panel.hidden = true;
+    panel.setAttribute('aria-labelledby', 'wsp-panel-title');
+    panel.innerHTML = `
+      <div class="wsp-head">
+        <span class="wsp-head-icon">${chatGearIcon(16)}</span>
+        <strong id="wsp-panel-title">Ajustar chats</strong>
+        <button type="button" class="wsp-close" aria-label="Cerrar">×</button>
+      </div>
+      <div class="wsp-section">
+        <div class="wsp-row-label">
+          <label for="wsp-width">Ancho de la lista</label>
+          <span class="wsp-value" id="wsp-width-value"></span>
+        </div>
+        <input id="wsp-width" type="range" min="180" max="620" step="10">
+        <div class="wsp-row-label">
+          <label for="wsp-collapsed">Ancho en iconos</label>
+          <span class="wsp-value" id="wsp-collapsed-value"></span>
+        </div>
+        <input id="wsp-collapsed" type="range" min="72" max="120" step="2" aria-label="Ancho en iconos">
+      </div>
+      <div class="wsp-section">
+        <span class="wsp-row-label" id="wsp-mode-label">Vista</span>
+        <div class="wsp-segmented" role="group" aria-labelledby="wsp-mode-label">
+          <button type="button" class="wsp-seg" data-mode="normal" aria-pressed="false">Fijo</button>
+          <button type="button" class="wsp-seg" data-mode="icons" aria-pressed="false">Iconos</button>
+          <button type="button" class="wsp-seg" data-mode="auto" aria-pressed="false">Auto</button>
+        </div>
+        <p class="wsp-hint" id="wsp-auto-hint" hidden>Se expande al acercar el cursor.</p>
+      </div>`;
+
+    document.body.append(trigger, panel);
+    placeRailControl();
+
+    function openPanel() {
+      clearTimeout(panelHideTimer);
+      panel.hidden = false;
+      updateUI();
+      positionPanel(panel, trigger);
+      requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add('wsp-panel-open')));
+    }
+
+    function closePanel() {
+      if (panel.hidden) return;
+      panel.classList.remove('wsp-panel-open');
+      clearTimeout(panelHideTimer);
+      panelHideTimer = setTimeout(() => { panel.hidden = true; }, PANEL_ANIM_MS);
+    }
+
+    trigger.addEventListener('click', () => { panel.hidden ? openPanel() : closePanel(); });
+    panel.querySelector('.wsp-close').addEventListener('click', () => { closePanel(); trigger.focus(); });
+    panel.querySelector('#wsp-width').addEventListener('input', e => save({ width: clamp(e.target.value, 180, 620) }));
+    panel.querySelector('#wsp-collapsed').addEventListener('input', e => save({ collapsed: clamp(e.target.value, 72, 120) }));
+    panel.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => save({ mode: btn.dataset.mode })));
+    document.addEventListener('keydown', e => { if (e.key === 'Escape' && !panel.hidden) { closePanel(); trigger.focus(); } });
+    updateUI();
+  }
+
+  function scheduleDetection() {
+    clearTimeout(scheduleDetection.timer);
+    scheduleDetection.timer = setTimeout(() => {
+      if (!controlsBuilt) buildControls();
+      markSidebar();
+      placeRailControl();
+    }, 120);
+  }
+
+  // Solo cuenta como "actividad estructural" lo que ocurre fuera de nuestros
+  // propios controles; eso es lo único que el failsafe necesita vigilar para
+  // decidir si WhatsApp sigue hidratando o si realmente se quedó quieto.
+  function isOwnMutation(mut) {
+    const t = mut.target;
+    return t instanceof Element && !!t.closest('#wsp-sidebar-mini-control, #wsp-sidebar-panel');
+  }
+
+  function startStructuralObserver() {
+    structureObserver = new MutationObserver((mutations) => {
+      if (mutations.some(m => !isOwnMutation(m))) lastStructuralActivityAt = performance.now();
+      scheduleDetection();
+    });
+    structureObserver.observe(root, { childList: true, subtree: true });
+    window.addEventListener('resize', scheduleDetection, { passive: true });
+  }
+
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== 'sync') return;
+    let changed = false;
+    if (changes.width) { state.width = clamp(changes.width.newValue, 180, 620); changed = true; }
+    if (changes.collapsed) { state.collapsed = clamp(changes.collapsed.newValue, 72, 120); changed = true; }
+    if (changes.mode && ['normal', 'icons', 'auto'].includes(changes.mode.newValue)) {
+      state.mode = changes.mode.newValue;
+      changed = true;
+    }
+    if (changed) applySettings();
+  });
+
+  // Bootstrap: corre en cuanto el script se evalúa, sin esperar
+  // DOMContentLoaded. document.documentElement ya existe siempre; body y
+  // #pane-side pueden no existir todavía, por eso buildControls()/
+  // markSidebar() se reintentan vía el observer y el primer scheduleDetection.
+  root.dataset.wspBooting = 'true';
+  bootStartedAt = performance.now();
+  lastStructuralActivityAt = bootStartedAt;
+  loadSettings();
+  startStructuralObserver();
+  failsafeInterval = setInterval(checkFailsafe, 500);
+  scheduleDetection();
+})();

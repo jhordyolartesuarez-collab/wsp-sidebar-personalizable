@@ -1,0 +1,34 @@
+# Política de privacidad
+
+**Última actualización: 21 de agosto de 2026**
+
+**Chat Sidebar Adjuster for WhatsApp Web** es un proyecto independiente. No afiliado, respaldado ni patrocinado por WhatsApp LLC o Meta Platforms, Inc.
+
+## Qué NO se recopila
+
+- No se recopilan mensajes.
+- No se recopilan contactos.
+- No se recopila historial de navegación ni de chats.
+- No se transmiten datos a ningún servidor externo.
+- No existen servidores externos: la extensión no realiza ninguna llamada de red propia.
+- No se usa analítica, publicidad ni telemetría.
+- No se leen ni almacenan credenciales.
+
+## Qué SÍ se guarda
+
+`chrome.storage.sync` guarda únicamente estas tres preferencias, dentro de la cuenta/navegador del propio usuario:
+
+- `width`: ancho general de la lista de chats (px).
+- `collapsed`: ancho compacto usado por los modos Iconos y Auto contraído (px).
+- `mode`: vista seleccionada (`normal`, `icons` o `auto`).
+
+Este almacenamiento se usa exclusivamente para conservar las preferencias visuales personales del usuario entre sesiones y dispositivos sincronizados con su cuenta de navegador. Ningún dato guardado se vende, comparte ni transmite a terceros.
+
+## Permisos utilizados
+
+- `storage`: guardar las tres preferencias descritas arriba.
+- `https://web.whatsapp.com/*`: aplicar la personalización visual únicamente dentro de WhatsApp Web.
+
+## Contacto del desarrollador
+
+`[REEMPLAZAR ANTES DE PUBLICAR: correo-de-contacto@ejemplo.com]`

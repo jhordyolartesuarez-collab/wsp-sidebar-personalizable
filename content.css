@@ -1,0 +1,256 @@
+:root {
+  --wsp-sidebar-width: 400px;
+  --wsp-sidebar-collapsed: 74px;
+  --wsp-sidebar-speed: 260ms;
+
+  /* Tema del panel: toma los tokens de diseño nativos de WhatsApp (WDS)
+     cuando existen, con fallback propio para tema oscuro si no. */
+  --wsp-panel-bg: var(--WDS-surface-default, #161717);
+  --wsp-panel-hover: rgba(255, 255, 255, .06);
+  --wsp-panel-border: var(--WDS-lines-divider, rgba(255, 255, 255, .1));
+  --wsp-text-primary: #e9edef;
+  --wsp-text-secondary: #8696a0;
+  --wsp-accent: var(--WDS-accent, #21c063);
+  --wsp-focus: rgba(33, 192, 99, .55);
+}
+
+/* Evita el salto visible nativo→normal→modo-guardado: mientras arranca,
+   solo se oculta (sin colapsar el layout) el contenido de la columna de
+   chats. Se retira en cuanto preferencias + estructura están listas
+   (ver tryReveal() en content.js), o por el failsafe de 8s. */
+html[data-wsp-booting="true"] #pane-side {
+  visibility: hidden !important;
+}
+
+/* El panel se marca por JS para evitar depender de clases internas cambiantes. */
+html body [data-wsp-sidebar="true"] {
+  width: var(--wsp-sidebar-width) !important;
+  min-width: var(--wsp-sidebar-width) !important;
+  max-width: var(--wsp-sidebar-width) !important;
+  flex: 0 0 var(--wsp-sidebar-width) !important;
+  transition: flex-basis var(--wsp-sidebar-speed) ease !important;
+  height: 100% !important;
+  min-height: 100% !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+  overflow: hidden !important;
+}
+
+html[data-wsp-mode="icons"] body [data-wsp-sidebar="true"],
+html[data-wsp-mode="auto"] body [data-wsp-sidebar="true"] {
+  width: var(--wsp-sidebar-collapsed) !important;
+  min-width: var(--wsp-sidebar-collapsed) !important;
+  max-width: var(--wsp-sidebar-collapsed) !important;
+  flex-basis: var(--wsp-sidebar-collapsed) !important;
+}
+
+html[data-wsp-mode="auto"] body [data-wsp-sidebar="true"]:hover,
+html[data-wsp-mode="auto"] body [data-wsp-sidebar="true"]:focus-within {
+  width: var(--wsp-sidebar-width) !important;
+  min-width: var(--wsp-sidebar-width) !important;
+  max-width: var(--wsp-sidebar-width) !important;
+  flex-basis: var(--wsp-sidebar-width) !important;
+}
+
+/* Botón discreto: sin relleno verde permanente, sin sombra, hover circular
+   gris oscuro como el resto de los controles nativos de la barra. La
+   posición fija de respaldo (right/bottom) solo se usa si placeRailControl()
+   no encuentra el icono de Meta AI; una vez insertado en la barra, la regla
+   .wsp-in-rail de más abajo la reemplaza por completo. */
+#wsp-sidebar-mini-control {
+  position: fixed;
+  right: 12px;
+  bottom: 74px;
+  z-index: 999999;
+  width: 38px;
+  height: 38px;
+  border: 1px solid var(--wsp-panel-border);
+  border-radius: 999px;
+  background: var(--wsp-panel-bg);
+  color: var(--wsp-text-secondary);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+#wsp-sidebar-mini-control:hover { background: var(--wsp-panel-hover); color: var(--wsp-text-primary); }
+#wsp-sidebar-mini-control:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 2px; }
+#wsp-sidebar-mini-control svg { pointer-events: none; }
+
+#wsp-sidebar-panel {
+  position: fixed;
+  z-index: 999999;
+  width: 264px;
+  max-width: calc(100vw - 20px);
+  max-height: calc(100vh - 20px);
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 14px;
+  border: 1px solid var(--wsp-panel-border);
+  border-radius: 16px;
+  color: var(--wsp-text-primary);
+  background: var(--wsp-panel-bg);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .35);
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", "Helvetica Neue", sans-serif;
+  opacity: 0;
+  transform: translateY(4px) scale(.98);
+  transition: opacity 170ms ease, transform 170ms ease;
+}
+#wsp-sidebar-panel[hidden] { display: none !important; }
+#wsp-sidebar-panel.wsp-panel-open { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  #wsp-sidebar-panel { transition: none; }
+}
+
+#wsp-sidebar-panel .wsp-head { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+#wsp-sidebar-panel .wsp-head-icon { display: flex; color: var(--wsp-text-secondary); }
+#wsp-sidebar-panel strong { flex: 1; font-size: 14px; font-weight: 600; }
+#wsp-sidebar-panel .wsp-close {
+  display: grid; place-items: center;
+  width: 26px; height: 26px; border: 0; border-radius: 999px;
+  background: transparent; color: var(--wsp-text-secondary);
+  cursor: pointer; font-size: 16px; line-height: 1; padding: 0;
+  transition: background 120ms ease, color 120ms ease;
+}
+#wsp-sidebar-panel .wsp-close:hover { background: var(--wsp-panel-hover); color: var(--wsp-text-primary); }
+#wsp-sidebar-panel .wsp-close:focus-visible,
+#wsp-sidebar-panel input:focus-visible,
+#wsp-sidebar-panel .wsp-seg:focus-visible {
+  outline: 2px solid var(--wsp-focus); outline-offset: 1px;
+}
+
+#wsp-sidebar-panel .wsp-section + .wsp-section { margin-top: 14px; }
+#wsp-sidebar-panel .wsp-row-label {
+  display: flex; align-items: center; justify-content: space-between;
+  color: var(--wsp-text-secondary); margin-bottom: 7px;
+}
+#wsp-sidebar-panel .wsp-row-label ~ .wsp-row-label { margin-top: 10px; }
+#wsp-sidebar-panel .wsp-row-label label { color: inherit; }
+#wsp-sidebar-panel .wsp-value {
+  color: var(--wsp-text-primary); background: var(--wsp-panel-hover);
+  border-radius: 6px; padding: 1px 7px; font-variant-numeric: tabular-nums;
+}
+#wsp-sidebar-panel input[type="range"] { width: 100%; accent-color: var(--wsp-accent); }
+
+#wsp-sidebar-panel .wsp-segmented {
+  display: flex; gap: 2px; padding: 2px;
+  background: var(--wsp-panel-hover);
+  border: 1px solid var(--wsp-panel-border);
+  border-radius: 10px;
+}
+#wsp-sidebar-panel .wsp-seg {
+  flex: 1; border: 1px solid transparent; border-radius: 8px; padding: 6px 4px;
+  color: var(--wsp-text-secondary); background: transparent; cursor: pointer; font: inherit;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+#wsp-sidebar-panel .wsp-seg:hover { background: var(--wsp-panel-hover); color: var(--wsp-text-primary); }
+#wsp-sidebar-panel .wsp-seg[aria-pressed="true"] {
+  background: rgba(33, 192, 99, .14);
+  border-color: rgba(33, 192, 99, .35);
+  color: var(--wsp-accent);
+}
+#wsp-sidebar-panel .wsp-hint { margin: 7px 0 0; color: var(--wsp-text-secondary); font-size: 12px; }
+
+
+/* El chat abierto absorbe el espacio liberado. La línea divisoria pertenece al
+   contenedor lateral marcado y por eso viaja con su borde derecho. */
+html body [data-wsp-main="true"] {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+/* En modo compacto la lista completa conserva desplazamiento vertical. */
+html[data-wsp-mode="icons"] body [data-wsp-chat-list="true"],
+html[data-wsp-mode="auto"] body [data-wsp-chat-list="true"] {
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+}
+
+/* La "línea divisoria residual" es la pista del scrollbar nativo de
+   #pane-side, siempre visible porque scrollHeight > clientHeight y queda
+   pegada al límite con el chat abierto. Se aplica directamente sobre el id
+   nativo (existe antes de que markSidebar() corra) para no depender de la
+   carrera entre la hidratación de WhatsApp y data-wsp-chat-list. Se oculta
+   solo el indicador visual, overflow-y: auto sigue intacto y el scroll
+   funciona igual. */
+#pane-side {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+#pane-side::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+/* Divisor nativo de WhatsApp (--WDS-lines-divider) sobre su propio sistema
+   interno de drawers: [data-testid="drawer-left"] conserva ~409.5px fijos
+   sin importar el ancho real de nuestro sidebar, así que el borde de
+   drawer-middle nunca cae en el límite visual real de nuestro sidebar en
+   ningún modo (incluido Ancho fijo, cuyo ancho es configurable por el
+   usuario y no coincide siempre con esos ~409.5px). data-wsp-mode ya existe
+   siempre tras el bootstrap (ver applySettings() en content.js), así que
+   acota la regla sin depender de valores de modo específicos. */
+html[data-wsp-mode] [data-testid="drawer-middle"] {
+  border-inline-start: 0 !important;
+  border-left: 0 !important;
+}
+
+
+
+#wsp-sidebar-mini-control.wsp-in-rail {
+  position: relative !important;
+  inset: auto !important;
+  z-index: auto !important;
+  width: 40px !important;
+  height: 40px !important;
+  margin: 26px auto 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  border-radius: 999px !important;
+}
+#wsp-sidebar-mini-control.wsp-in-rail:hover,
+#wsp-sidebar-mini-control.wsp-in-rail:focus-visible {
+  background: rgba(255, 255, 255, .06) !important;
+}
+
+
+/* v1.0.6 - Eliminación definitiva del divisor residual.
+   No se fuerza grid-template: WhatsApp usa un layout flex en esta vista y
+   aplicar tracks grid deja una coordenada visual antigua. */
+html body [data-wsp-layout="true"],
+html body [data-wsp-divider-owner="true"] {
+  border-inline: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Cubre el caso observado donde WhatsApp conserva la línea en un pseudo-elemento
+   de uno de los wrappers estructurales del panel abierto. */
+html body [data-wsp-divider-owner="true"]::before,
+html body [data-wsp-divider-owner="true"]::after {
+  border-inline: 0 !important;
+  border-left: 0 !important;
+  border-right: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+}
+
+/* El ancho queda gobernado únicamente por flex-basis del sidebar; el chat
+   abierto toma el resto sin conservar left/margin de la anchura anterior. */
+html body [data-wsp-layout="true"] {
+  display: flex !important;
+  flex-direction: row !important;
+}
+html body [data-wsp-main="true"] {
+  position: relative !important;
+  inset-inline-start: 0 !important;
+  margin-inline-start: 0 !important;
+  transform: none !important;
+}

@@ -1,0 +1,27 @@
+{
+  ".claude/settings.json": {
+    "mtime": 1793932053.71901,
+    "seen": 1793932055.869605,
+    "ast_hash": "f205a7b72b9531a5076da03af14cbc96",
+    "semantic_hash": "f205a7b72b9531a5076da03af14cbc96",
+    "ast_empty": true
+  },
+  "content.js": {
+    "mtime": 1787371599.8869698,
+    "seen": 1793932055.8696105,
+    "ast_hash": "abf8fbed837aeb08c3c643b4e98c6ef7",
+    "semantic_hash": "abf8fbed837aeb08c3c643b4e98c6ef7"
+  },
+  "manifest.json": {
+    "mtime": 1787371599.8550656,
+    "seen": 1793932055.869759,
+    "ast_hash": "ce30478c286060f75749218ffab585af",
+    "semantic_hash": "ce30478c286060f75749218ffab585af"
+  },
+  "popup.js": {
+    "mtime": 1787371600.0230222,
+    "seen": 1793932055.8698473,
+    "ast_hash": "3ccb54b5246be43ecf738538fde2e752",
+    "semantic_hash": "3ccb54b5246be43ecf738538fde2e752"
+  }
+}
