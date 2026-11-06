@@ -7,21 +7,21 @@
     "ast_empty": true
   },
   "content.js": {
-    "mtime": 1793935610.1169763,
-    "seen": 1793935624.4130602,
-    "ast_hash": "848359909c583d5093749a8ecb391ed7",
+    "mtime": 1793936391.3345673,
+    "seen": 1793936411.4321327,
+    "ast_hash": "3e1679c3bb72932b82984cd092b571e3",
     "semantic_hash": ""
   },
   "manifest.json": {
-    "mtime": 1793935623.2762678,
-    "seen": 1793935624.4130619,
-    "ast_hash": "270e13252fe2ab946b97cd785259e448",
+    "mtime": 1793936391.8812864,
+    "seen": 1793936411.4321342,
+    "ast_hash": "f8070dd0ef0967ca8ad3a4e874ab977a",
     "semantic_hash": ""
   },
   "popup.js": {
-    "mtime": 1793933811.8482716,
-    "seen": 1793934205.128365,
-    "ast_hash": "de5a2ad2f4419334aa0ae84877785922",
+    "mtime": 1793936374.9344988,
+    "seen": 1793936411.4321353,
+    "ast_hash": "492d1afd97da2a2eddbc733ee4852cd2",
     "semantic_hash": ""
   },
   "CIERRE_PROYECTO.md": {
@@ -55,9 +55,9 @@
     "semantic_hash": ""
   },
   "popup.html": {
-    "mtime": 1793933811.8482716,
-    "seen": 1793934205.128373,
-    "ast_hash": "f98af9a402887f7e17ed1ae2d95ad174",
+    "mtime": 1793936391.8803017,
+    "seen": 1793936411.4321434,
+    "ast_hash": "01db2a23b9f830c7564e823ead31efb4",
     "semantic_hash": ""
   },
   "icons/icon128.png": {
@@ -85,9 +85,9 @@
     "semantic_hash": ""
   },
   "background.js": {
-    "mtime": 1793934190.6811965,
-    "seen": 1793934205.1283588,
-    "ast_hash": "0228b04ba09f2488dbfb7077c324274c",
+    "mtime": 1793936374.9344988,
+    "seen": 1793936411.4321294,
+    "ast_hash": "0b47511acb22a62e245981ea93922094",
     "semantic_hash": ""
   }
 }

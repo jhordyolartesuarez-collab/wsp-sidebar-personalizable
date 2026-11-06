@@ -1,17 +1,17 @@
 # Graph Report - wsp-sidebar-personalizable-v1.0.8  (2026-11-05)
 
 ## Corpus Check
-- 5 files · ~4,557 words
+- 5 files · ~5,055 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 3 file(s) not represented in the graph (top: .css 2, (none) 1)
 
 ## Summary
-- 51 nodes · 75 edges · 9 communities (6 shown, 3 thin omitted)
+- 55 nodes · 84 edges · 9 communities (6 shown, 3 thin omitted)
 - Extraction: 99% EXTRACTED · 1% INFERRED · 0% AMBIGUOUS · INFERRED: 1 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `93da7f35`
+- Built from commit: `faee5d05`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,31 +19,29 @@
 - buildControls
 - manifest.json
 - default_icon
-- scheduleDetection
+- closeOpenChat
 - content.js
 - icons
-- findConversationPane
+- fitToViewport
 
 ## God Nodes (most connected - your core abstractions)
 1. `markSidebar()` - 8 edges
 2. `buildControls()` - 8 edges
-3. `scheduleDetection()` - 7 edges
-4. `default_icon` - 5 edges
-5. `icons` - 5 edges
-6. `applySettings()` - 4 edges
-7. `findPaneSide()` - 4 edges
-8. `tryReveal()` - 4 edges
-9. `checkFailsafe()` - 4 edges
-10. `updateUI()` - 4 edges
+3. `scheduleDetection()` - 8 edges
+4. `fitToViewport()` - 5 edges
+5. `default_icon` - 5 edges
+6. `icons` - 5 edges
+7. `applySettings()` - 4 edges
+8. `findPaneSide()` - 4 edges
+9. `closeOpenChat()` - 4 edges
+10. `ensureBackButton()` - 4 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `loadSettings()` --calls--> `applySettings()`  [EXTRACTED]
   content.js → content.js  _Bridges community 0 → community 4_
-- `findPaneSide()` --calls--> `hasLayout()`  [EXTRACTED]
-  content.js → content.js  _Bridges community 6 → community 4_
-- `scheduleDetection()` --calls--> `markSidebar()`  [EXTRACTED]
-  content.js → content.js  _Bridges community 4 → community 3_
-- `buildControls()` --calls--> `placeRailControl()`  [EXTRACTED]
+- `scheduleDetection()` --calls--> `fitToViewport()`  [EXTRACTED]
+  content.js → content.js  _Bridges community 6 → community 0_
+- `scheduleDetection()` --calls--> `ensureBackButton()`  [EXTRACTED]
   content.js → content.js  _Bridges community 3 → community 0_
 
 ## Import Cycles
@@ -52,8 +50,8 @@
 ## Communities (9 total, 3 thin omitted)
 
 ### Community 0 - "buildControls"
-Cohesion: 0.32
-Nodes (7): applySettings(), buildControls(), openPanel(), chatGearIcon(), positionPanel(), save(), updateUI()
+Cohesion: 0.24
+Nodes (10): applySettings(), buildControls(), openPanel(), chatGearIcon(), placeRailControl(), positionPanel(), save(), scheduleDetection() (+2 more)
 
 ### Community 1 - "manifest.json"
 Cohesion: 0.20
@@ -63,13 +61,13 @@ Nodes (9): background, service_worker, content_scripts, description, host_permis
 Cohesion: 0.25
 Nodes (8): action, default_icon, default_popup, default_title, 128, 16, 32, 48
 
-### Community 3 - "scheduleDetection"
-Cohesion: 0.46
-Nodes (7): backIcon(), ensureBackButton(), isOwnMutation(), placeRailControl(), scheduleDetection(), startStructuralObserver(), updateView()
+### Community 3 - "closeOpenChat"
+Cohesion: 0.67
+Nodes (3): backIcon(), closeOpenChat(), ensureBackButton()
 
 ### Community 4 - "content.js"
-Cohesion: 0.38
-Nodes (7): checkFailsafe(), findPaneSide(), findStructuralSidebar(), loadSettings(), markDividerOwners(), markSidebar(), tryReveal()
+Cohesion: 0.35
+Nodes (11): checkFailsafe(), findConversationPane(), findPaneSide(), findStructuralSidebar(), hasLayout(), isOwnMutation(), loadSettings(), markDividerOwners() (+3 more)
 
 ### Community 5 - "icons"
 Cohesion: 0.40
@@ -82,6 +80,6 @@ Nodes (5): icons, 128, 16, 32, 48
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `action` connect `default_icon` to `manifest.json`?**
-  _High betweenness centrality (0.095) - this node is a cross-community bridge._
+  _High betweenness centrality (0.081) - this node is a cross-community bridge._
 - **Why does `icons` connect `icons` to `manifest.json`?**
-  _High betweenness centrality (0.064) - this node is a cross-community bridge._
+  _High betweenness centrality (0.055) - this node is a cross-community bridge._

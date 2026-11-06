@@ -1,17 +1,12 @@
 const WA = 'https://web.whatsapp.com/';
 const findTab = async () => (await chrome.tabs.query({ url: WA + '*' }))[0];
+const screenArea = () => ({ w: screen.availWidth, h: screen.availHeight, l: screen.availLeft, t: screen.availTop });
 
-// Mueve la pestaña existente (no abre otra: WhatsApp solo permite una sesión
-// activa) a una ventana emergente con tamaño de celular.
+// Mueve la pestaña existente (WhatsApp solo permite una sesión activa) a una
+// ventana tipo celular anclada al borde derecho de la pantalla.
 document.getElementById('phone').addEventListener('click', async () => {
-  const opts = { type: 'popup', width: 420, height: 820, focused: true };
   const tab = await findTab();
-  if (tab) {
-    if (tab.pinned) await chrome.tabs.update(tab.id, { pinned: false });
-    await chrome.windows.create({ ...opts, tabId: tab.id });
-  } else {
-    await chrome.windows.create({ ...opts, url: WA });
-  }
+  await chrome.runtime.sendMessage({ cmd: 'phone', tabId: tab?.id, screen: screenArea() }).catch(() => {});
   window.close();
 });
 

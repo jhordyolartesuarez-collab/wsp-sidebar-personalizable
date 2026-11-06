@@ -102,8 +102,10 @@
 
   // ---- Modo celular: un solo panel (lista O chat) en ventanas angostas ----
   const mobileMQ = matchMedia('(max-width: 760px)');
-  let forceList = false;   // el usuario pulsó "Volver"
-  let lastMain = null;
+  // El usuario pulsó "Volver". Solo se anula al tocar un chat de la lista o
+  // cuando el chat se cierra de verdad; NO por identidad del elemento, porque
+  // WhatsApp recrea #main al cambiar de sección y eso reabría el chat.
+  let forceList = false;
 
   function backIcon() {
     return '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>';
@@ -114,8 +116,63 @@
     // Chat, canal o comunidad abiertos: #main o cualquier cabecera en el panel
     // principal (las pantallas vacías de bienvenida no tienen cabecera).
     const main = document.getElementById('main') || document.querySelector('[data-wsp-main="true"] header');
-    if (main !== lastMain) { forceList = false; lastMain = main; } // se abrió otro contenido
+    if (!main) forceList = false; // ya no hay chat abierto
     root.dataset.wspView = main && !forceList ? 'chat' : 'list';
+  }
+
+  // Cierra el chat en WhatsApp con Esc (atajo nativo) para que no quede
+  // seleccionado/sombreado en la lista. Varios intentos porque Esc cierra
+  // primero lo que esté encima (stickers, info del contacto).
+  function closeOpenChat(attempt = 0) {
+    const main = document.getElementById('main');
+    if (!main || attempt > 2) return;
+    const target = main.querySelector('footer [contenteditable="true"]') || main;
+    if (target.focus) target.focus({ preventScroll: true });
+    const opts = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
+    target.dispatchEvent(new KeyboardEvent('keydown', opts));
+    target.dispatchEvent(new KeyboardEvent('keyup', opts));
+    setTimeout(() => closeOpenChat(attempt + 1), 80);
+  }
+
+  // Modo celular: los paneles de WhatsApp con ancho fijo de escritorio
+  // (stickers, multimedia, menús...) se salen de la ventana. Se marcan y el
+  // CSS los encaja: los posicionados se anclan a los bordes, los demás se
+  // dejan encoger. El contenido de un carrusel con scroll propio no se toca.
+  // ponytail: recorre todo #app (unos miles de nodos) tras cada ráfaga de
+  // cambios; si se nota lento, limitarlo a capas flotantes conocidas.
+  function fitToViewport(pass = 0) {
+    if (!mobileMQ.matches || pass > 4) return;
+    const app = document.getElementById('app');
+    if (!app) return;
+    const vw = root.clientWidth;
+    let skip = null;
+    let changed = false;
+    for (const el of app.getElementsByTagName('*')) {
+      if (skip && skip.contains(el)) continue;
+      if (!(el instanceof HTMLElement) || el.hasAttribute('data-wsp-fit')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.right <= 0 || r.left >= vw) continue; // oculto o fuera
+      if (r.left >= -1 && r.right <= vw + 1) continue;             // cabe
+      if (insideScroller(el, vw)) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.opacity === '0') continue; // capas invisibles: no traerlas a la vista
+      el.setAttribute('data-wsp-fit', cs.position === 'absolute' || cs.position === 'fixed' ? 'overlay' : 'inner');
+      skip = el; // sus hijos se reevalúan en la siguiente pasada, ya encajado
+      changed = true;
+    }
+    if (changed) requestAnimationFrame(() => fitToViewport(pass + 1));
+  }
+
+  function insideScroller(el, vw) {
+    let n = el.parentElement;
+    for (let i = 0; n && i < 6; i += 1, n = n.parentElement) {
+      const ox = getComputedStyle(n).overflowX;
+      if (ox === 'auto' || ox === 'scroll') {
+        const r = n.getBoundingClientRect();
+        return r.left >= -1 && r.right <= vw + 1;
+      }
+    }
+    return false;
   }
 
   function ensureBackButton() {
@@ -130,6 +187,7 @@
     btn.addEventListener('click', e => {
       e.stopPropagation(); // que no abra la info del contacto
       forceList = true;
+      closeOpenChat(); // antes de ocultar: el foco no entra en elementos ocultos
       root.dataset.wspView = 'list';
     });
     header.prepend(btn);
@@ -239,7 +297,7 @@
     panel.querySelector('.wsp-phone').textContent = phone ? '🖥️ Volver a la vista normal' : '📱 Abrir como celular';
     panel.querySelector('.wsp-phone-hint').textContent = phone
       ? 'Toca un chat para abrirlo y usa ← para volver. 📌 Para dejar esta ventana siempre encima: Win + Ctrl + T (requiere PowerToys de Microsoft).'
-      : 'Pasa WhatsApp a una ventana pequeña: lista y chat de uno en uno, con botón ← Volver.';
+      : 'Ancla WhatsApp al borde derecho de la pantalla, como un celular: lista y chat de uno en uno, con botón ← Volver.';
   }
 
   const MODE_HINTS = {
@@ -396,7 +454,10 @@
     panel.querySelector('.wsp-reset').addEventListener('click', () => save({ ...DEFAULTS }));
     // Solo el service worker puede mover la pestaña a otra ventana.
     panel.querySelector('.wsp-phone').addEventListener('click', () => {
-      chrome.runtime.sendMessage(mobileMQ.matches ? 'desktop' : 'phone').catch(() => {});
+      const msg = mobileMQ.matches
+        ? { cmd: 'desktop' }
+        : { cmd: 'phone', screen: { w: screen.availWidth, h: screen.availHeight, l: screen.availLeft, t: screen.availTop } };
+      chrome.runtime.sendMessage(msg).catch(() => {});
     });
     // Captura + stopPropagation: Esc cierra solo el panel, no el chat abierto de WhatsApp.
     window.addEventListener('keydown', e => {
@@ -417,10 +478,16 @@
       placeRailControl();
       ensureBackButton();
       updateView();
+      fitToViewport();
     }, 120);
   }
 
-  mobileMQ.addEventListener('change', () => { updateView(); updateUI(); });
+  mobileMQ.addEventListener('change', () => {
+    if (!mobileMQ.matches) document.querySelectorAll('[data-wsp-fit]').forEach(el => el.removeAttribute('data-wsp-fit'));
+    updateView();
+    updateUI();
+    scheduleDetection();
+  });
   // Tocar un chat de la lista (aunque sea el mismo que estaba abierto)
   // vuelve a mostrar la conversación.
   document.addEventListener('click', e => {
