@@ -1,54 +1,35 @@
-# Chat Sidebar Adjuster for WhatsApp Web — v1.0.8 (cierre de proyecto)
+# Chat Sidebar Adjuster for WhatsApp Web — cierre v1.2.6
 
-Fecha de cierre: 2026-08-24
+Fecha de cierre: 2026-11-05
 
 ## Estado
 
-Listo para publicar en la Chrome Web Store. Código, empaquetado y recursos promocionales terminados.
+Listo para publicar en la Chrome Web Store como **v1.2.6**. El código, el paquete, la ficha y las imágenes están terminados. La ficha se completó a mano en el panel de desarrolladores, porque el navegador no permite automatizar las páginas de la Web Store.
 
-## Qué contiene esta carpeta
+**Pendiente:** reemplazar el correo de contacto de ejemplo en `PRIVACY.md` (también es la URL de la política de privacidad de la ficha).
 
-- `manifest.json`, `content.js`, `content.css`, `popup.*`, `icons/` — extensión funcional (MV3, solo permiso `storage`, host permission único a `web.whatsapp.com`).
-- `README.md`, `PRIVACY.md`, `STORE_LISTING_ES.md` — documentación y ficha de tienda.
-- `../wsp-sidebar-personalizable-v1.0.8.zip` — paquete listo para subir.
-- `../STORE_ASSETS_1.0.8/` — capturas y mosaicos promocionales (ver detalle abajo).
+## Qué se hizo en esta etapa (1.0.8 → 1.2.6)
 
-## Qué hace la extensión
+1. Repositorio público en GitHub y mapa del código con graphify (`graphify-out/graph.html`).
+2. Panel didáctico (v1.0.9): pasos guiados, explicación por modo, Restablecer, cierre al hacer clic fuera.
+3. Modo celular (v1.1.x): un solo panel con ← Volver, adaptación de todas las vistas y ventana anclada al borde derecho.
+4. Ventana flotante siempre visible (v1.2.x) con Document Picture-in-Picture y una sola ventana a la vista.
+5. Gestos de touchpad/mouse, foco automático al abrir un chat y apertura en el mensaje más reciente.
+6. Encaje automático seguro para menús y paneles, con disyuntor y prueba automática (`test/fit.html`, 8/8).
+7. Medidas del Galaxy S26 Ultra (412 × 891) con autocalibración.
+8. Material de la tienda: `STORE_LISTING_ES.md`, `store/out/` (5 capturas + 2 mosaicos) y `build-zip.py`.
 
-Controla el ancho de la lista de chats de WhatsApp Web desde un panel propio ("Ajustar chats"):
-ancho fijo (180–620px), vista compacta en iconos (72–120px) y modo automático que expande la lista al pasar el cursor. Sin lectura, guardado ni transmisión de mensajes.
+Detalle por versión en `CHANGELOG.md`; los PR #1, #2 y #3 del repositorio documentan cada etapa.
 
-## Recursos de tienda (`STORE_ASSETS_1.0.8/`)
+## Cómo se probó
 
-| Archivo | Dimensiones | Contenido |
-|---|---|---|
-| `01-panel-configuracion-1280x800.png` | 1280×800 | Panel "Ajustar chats" abierto, vista Fijo |
-| `02-modo-iconos-1280x800.png` | 1280×800 | Lista colapsada en iconos, panel cerrado |
-| `03-modo-auto-expandido-1280x800.png` | 1280×800 | Modo Auto con lista expandida por hover |
-| `promo-small-440x280.png` | 440×280 | Mosaico pequeño de tienda |
-| `promo-marquee-1400x560.png` | 1400×560 | Mosaico con desplazamiento |
-| `00-hoja-de-contacto.html` | — | Hoja de revisión con miniaturas y validación técnica |
+- `test/fit.html`: prueba automática del encaje con el código real en una ventana de 420×820.
+- Pruebas en WhatsApp Web (Brave), hechas por el usuario con capturas, tras cada versión.
+- Las páginas de prueba se sirvieron en localhost. Las imágenes de la tienda son maquetas con datos ficticios, no la sesión real.
 
-Todas las capturas cumplen: PNG 24-bit RGB, sin canal alfa, dimensiones exactas.
+## Lecciones para la próxima sesión
 
-Se descartó una 4ª captura opcional (ancho intermedio 500px) por resultar visualmente redundante con la captura 1.
-
-## Método y privacidad (capturas 1–3)
-
-Generadas sobre la sesión real de WhatsApp Web del usuario, con anonimización temporal del DOM antes de cada captura:
-
-- Nombres de chats/grupos, mensajes, horas y contadores reemplazados por una lista ficticia cerrada (Aventureros, Recetas de la Abuela, etc.).
-- Avatares reales sustituidos por gradientes/formas sintéticas generadas por SVG.
-- Fila especial "Mensaje para ti" (exponía teléfono real y una URL) ocultada por completo.
-- Verificación de texto visible contra la lista autorizada antes de guardar cada archivo (lectura directa del DOM renderizado, no OCR).
-- Ninguna anonimización tocó `chrome.storage`, `localStorage` ni IndexedDB; la pestaña se recargó al finalizar para restaurar el estado real del usuario.
-
-Los dos mosaicos promocionales se construyeron desde cero (HTML/CSS local), sin usar la sesión real como base, con el ícono original de la extensión y la lista ficticia.
-
-## Limitación técnica conocida
-
-El entorno de captura no permitió redimensionar la ventana del navegador a 1280×800 nativos (quedó maximizada). Las 3 capturas de WhatsApp se generaron recortando la región CSS equivalente y reescalando con LANCZOS a las dimensiones exactas — nítidas pero no un recorte 1:1 nativo. Los mosaicos sí son downscale puro, sin pérdida perceptible.
-
-## Siguiente paso
-
-Subir el ZIP y los assets al panel de desarrollador de Chrome Web Store.
+- Brave cargaba una copia vieja desde OneDrive. Si un cambio "no aparece", revisar desde qué carpeta está cargada la extensión.
+- Tras ↻ en `brave://extensions` hay que recargar WhatsApp (F5).
+- WhatsApp admite una sola sesión activa. Abrir WhatsApp en otra pestaña para probar desconecta la del usuario (y en una ocasión cerró la sesión). Probar en local (`test/`) o pedir capturas.
+- Claude in Chrome no puede abrir `file://`, páginas `brave://`, el popup de la extensión ni la Chrome Web Store.
