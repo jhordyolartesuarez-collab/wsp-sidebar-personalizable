@@ -298,7 +298,18 @@ html[data-wsp-mobile="true"][data-wsp-mode] body [data-wsp-sidebar="true"] {
   flex: 1 1 auto !important;
   transition: none !important;
 }
-html[data-wsp-mobile="true"][data-wsp-view="list"] body [data-wsp-main="true"] { display: none !important; }
+/* Oculto SIN display:none: el chat conserva su tamaño real a pantalla
+   completa, así WhatsApp puede bajar al mensaje más reciente al abrirlo
+   (con display:none medía 0px y el scroll quedaba mal). opacity + clip-path
+   impiden que se vea o reciba clics, incluso desde sus elementos hijos. */
+html[data-wsp-mobile="true"][data-wsp-view="list"] body [data-wsp-main="true"] {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: -1 !important;
+  opacity: 0 !important;
+  clip-path: inset(100%) !important;
+  pointer-events: none !important;
+}
 
 /* Chat: solo la conversación, sin lista ni barra lateral. */
 html[data-wsp-mobile="true"][data-wsp-view="chat"][data-wsp-mode] body [data-wsp-sidebar="true"],
@@ -319,3 +330,123 @@ html[data-wsp-mobile="true"] #wsp-back {
 }
 html[data-wsp-mobile="true"] #wsp-back:hover { background: var(--wsp-panel-hover); }
 html[data-wsp-mobile="true"] #wsp-back:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 1px; }
+
+/* v1.1.1 Botón de ventana tipo celular dentro del panel. */
+#wsp-sidebar-panel .wsp-phone {
+  width: 100%; padding: 8px; border: 0; border-radius: 8px;
+  background: var(--wsp-accent); color: #0b141a;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+#wsp-sidebar-panel .wsp-phone:hover { filter: brightness(1.08); }
+#wsp-sidebar-panel .wsp-phone:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 2px; }
+/* ===== v1.1.2 Modo celular: cajones, stickers e info de contacto ===== */
+
+/* Canales, Estados, Comunidades, Ajustes, Archivados y Nuevo chat se abren
+   en drawer-left, que WhatsApp fija al 30%: en celular ocupa todo el ancho
+   junto a la barra. Su borde izquierdo era la línea gris residual. */
+/* flex-basis fijo: con flex:1 compartía espacio con un hermano invisible y
+   quedaba angosto. 64px = ancho de la barra de iconos (min-width nativo). */
+html[data-wsp-mobile="true"] [data-testid="drawer-left"] {
+  flex: 0 0 calc(100% - 64px) !important;
+  width: auto !important;
+  max-width: none !important;
+  border-left: 0 !important;
+  border-inline-start: 0 !important;
+}
+/* Con un chat/canal abierto, el cajón (y su borde) no debe asomar. */
+html[data-wsp-mobile="true"][data-wsp-view="chat"] [data-testid="drawer-left"] { display: none !important; }
+
+/* Emojis, GIF y stickers: el panel nativo mide 560px fijos anclado al botón
+   y se salía por la izquierda. En celular ocupa el ancho de la ventana. */
+/* fixed: WhatsApp lo posiciona con left en línea respecto a un contenedor
+   desplazado; fijo a la ventana queda siempre dentro (sobre la caja de texto). */
+html[data-wsp-mobile="true"] div[role="application"]:has([data-testid="expressions-panel"]) {
+  position: fixed !important;
+  left: 8px !important;
+  right: 8px !important;
+  width: auto !important;
+  max-width: none !important;
+  /* Sin max-height: WhatsApp ya calcula el alto según la ventana y alinea el
+     contenido abajo, así que recortarlo cortaba la fila de pestañas. */
+}
+
+/* Botón de la extensión: si no pudo ubicarse en la barra, nunca flota sobre
+   un chat abierto en modo celular. */
+html[data-wsp-mobile="true"][data-wsp-view="chat"] #wsp-sidebar-mini-control { display: none !important; }
+/* Al final de la sección superior de la barra (sin Meta AI), sin hueco extra. */
+#wsp-sidebar-mini-control.wsp-in-rail.wsp-in-primary { margin-top: 4px !important; }
+
+/* Info del contacto/grupo (drawer-right): pantalla completa sobre el chat
+   en lugar de comprimir la conversación. Se cierra con su propia X. */
+html[data-wsp-mobile="true"] [data-testid="drawer-right"]:has(> * > *) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  flex: none !important;
+  z-index: 250 !important;
+}
+/* ===== Encaje general a la ventana (ventanas de hasta 1100px) =====
+   fitToViewport() en content.js marca lo que se sale de la ventana. Las
+   capas flotantes ("overlay") se recolocan desde JS con `translate`; forzar
+   aquí left/right peleaba con el posicionamiento de WhatsApp (menú de
+   llamadas) y podía trabar la página. */
+[data-wsp-fit="inner"] {
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+/* v1.2.0 Botón de ventana flotante (secundario, debajo de "Abrir como celular"). */
+#wsp-sidebar-panel .wsp-float {
+  width: 100%; margin-top: 4px; padding: 8px; border: 1px solid var(--wsp-panel-border);
+  border-radius: 8px; background: transparent; color: var(--wsp-text-primary);
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+#wsp-sidebar-panel .wsp-float:hover { background: var(--wsp-panel-hover); }
+#wsp-sidebar-panel .wsp-float:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 2px; }
+#wsp-sidebar-panel .wsp-float-hint { min-height: 0; }
+/* v1.2.1 Aviso que tapa la pestaña mientras la ventana flotante está activa. */
+#wsp-float-cover {
+  position: fixed; inset: 0; z-index: 2147483647;
+  display: grid; place-items: center; padding: 24px;
+  background: var(--WDS-surface-default, #111b21);
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: var(--wsp-text-primary);
+}
+#wsp-float-cover .wsp-cover-box { max-width: 360px; text-align: center; }
+#wsp-float-cover .wsp-cover-icon { font-size: 40px; margin-bottom: 8px; }
+#wsp-float-cover strong { display: block; font-size: 18px; margin-bottom: 8px; }
+#wsp-float-cover p { margin: 0 0 18px; color: var(--wsp-text-secondary); }
+#wsp-float-cover button {
+  padding: 10px 18px; border: 0; border-radius: 999px;
+  background: var(--wsp-accent); color: #0b141a;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+#wsp-float-cover button:hover { filter: brightness(1.08); }
+#wsp-float-cover button:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 3px; }
+/* v1.2.2 Gestos: en modo celular el deslizamiento horizontal del touchpad
+   navega dentro de WhatsApp (content.js), no el historial del navegador. */
+html[data-wsp-mobile="true"],
+html[data-wsp-mobile="true"] body { overscroll-behavior-x: none !important; }
+
+#wsp-swipe-hint {
+  position: fixed; top: 50%; z-index: 2147483646;
+  width: 44px; height: 44px; margin-top: -22px;
+  display: grid; place-items: center; border-radius: 999px;
+  background: var(--wsp-accent); color: #0b141a;
+  font: 600 22px/1 system-ui, sans-serif;
+  opacity: 0; pointer-events: none;
+}
+#wsp-swipe-hint[data-side="left"] { left: 12px; }
+#wsp-swipe-hint[data-side="right"] { right: 12px; }
+#wsp-swipe-hint.wsp-show { animation: wsp-swipe 520ms ease-out; }
+@keyframes wsp-swipe {
+  0% { opacity: 0; transform: scale(.7); }
+  30% { opacity: .95; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #wsp-swipe-hint.wsp-show { animation: none; }
+}
+/* Contenedor alto que se desbordaba a los lados (p. ej. Multimedia): sin
+   scroll horizontal; el scroll vertical sigue igual. */
+[data-wsp-fit="noscroll"] { overflow-x: hidden !important; }

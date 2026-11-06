@@ -15,7 +15,10 @@ La barra vertical de accesos rápidos y la conversación abierta quedan fuera de
 - Botón de acceso discreto, insertado en la barra vertical de WhatsApp Web, debajo del icono de Meta AI.
 - Preferencias sincronizadas con `chrome.storage.sync`.
 - Sin analítica, anuncios, lectura ni transmisión de mensajes.
-- **Modo celular (v1.1.0):** desde el popup de la extensión, "📱 Abrir como celular" mueve la pestaña de WhatsApp Web a una ventana emergente de 420×820. En ventanas de 760 px o menos se muestra un solo panel (lista o chat) y la cabecera del chat incluye un botón **← Volver**. Al agrandar la ventana vuelve la vista normal.
+- **Modo celular (v1.1.0):** desde el popup de la extensión, "📱 Abrir como celular" mueve la pestaña de WhatsApp Web a una ventana del tamaño de un Samsung Galaxy S26 Ultra (412 × 891 px de área visible, autocalibrada), anclada al borde derecho de la pantalla. En ventanas de 760 px o menos se muestra un solo panel (lista o chat) y la cabecera del chat incluye un botón **← Volver**. Al agrandar la ventana vuelve la vista normal.
+- **Ventana flotante (v1.2.0):** desde el panel, "📌 Ventana flotante" abre WhatsApp en una ventana Picture-in-Picture que se mantiene encima de cualquier aplicación. Al cerrarla, la pestaña original se recarga para retomar la sesión (WhatsApp admite una sola activa).
+- **Gestos (v1.2.2):** en modo celular, dos dedos a la derecha en el touchpad (o el botón atrás del mouse) vuelven a la lista; a la izquierda reabren el último chat.
+- **Encaje automático:** en ventanas de hasta 1100 px, menús y paneles de WhatsApp que se salen de la ventana se recolocan solos (prueba: `test/fit.html`).
 
 ## Cargar descomprimida
 
@@ -36,7 +39,7 @@ La barra vertical de accesos rápidos y la conversación abierta quedan fuera de
 
 ## Publicación en Chrome Web Store
 
-Suba el ZIP incluido desde el panel de desarrolladores. Complete ficha, capturas, categoría y datos del desarrollador (ver `STORE_LISTING_ES.md`). La extensión solicita únicamente `storage` y acceso a `https://web.whatsapp.com/*`.
+Suba el ZIP incluido desde el panel de desarrolladores. Complete ficha, capturas, categoría y datos del desarrollador (ver `STORE_LISTING_ES.md`). La extensión solicita `storage`, `declarativeNetRequestWithHostAccess` (solo para la ventana flotante) y acceso a `https://web.whatsapp.com/*`.
 
 ## Privacidad
 
@@ -45,6 +48,7 @@ Ver `PRIVACY.md`. Resumen: no se recopilan mensajes, contactos ni historial; no 
 ## Permisos
 
 - `storage`: guardar las preferencias de ancho y modo.
+- `declarativeNetRequestWithHostAccess`: solo para la **ventana flotante**. Cambia la cabecera `X-Frame-Options` de WhatsApp Web de `DENY` a `SAMEORIGIN` en cargas de subventana (`sub_frame`), para que WhatsApp pueda mostrarse dentro de su propia ventana Picture-in-Picture. `SAMEORIGIN` sigue impidiendo que cualquier otro sitio incruste WhatsApp. No lee ni modifica contenido.
 - `https://web.whatsapp.com/*`: aplicar la personalización únicamente dentro de WhatsApp Web.
 
 ## Compatibilidad

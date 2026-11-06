@@ -77,7 +77,9 @@
       const nr = node.getBoundingClientRect();
       const pd = getComputedStyle(parent);
       const horizontalLayout = (pd.display === 'flex' && pd.flexDirection === 'row') || pd.display === 'grid';
-      if (horizontalLayout && nr.width >= 220 && nr.width <= 650) {
+      // En ventana tipo celular WhatsApp deja la lista en ~30% (≈120px).
+      const minWidth = mobileMQ.matches ? 60 : 220;
+      if (horizontalLayout && nr.width >= minWidth && nr.width <= 650) {
         return { sidebar: node, layout: parent };
       }
       node = parent;
@@ -98,10 +100,60 @@
     }) || null;
   }
 
+  // ---- Ventana flotante (siempre encima) ----
+  // Document Picture-in-Picture es la única ventana que el navegador mantiene
+  // por encima de otras aplicaciones. Dentro se carga WhatsApp en un iframe
+  // (rules.json cambia X-Frame-Options DENY → SAMEORIGIN solo para WhatsApp),
+  // que al ser angosto usa el modo celular. WhatsApp admite una sola sesión
+  // activa: el iframe la toma y, al cerrarse, esta pestaña se recarga para
+  // recuperarla.
+  const IN_FRAME = window.top !== window;
+  // Área visible de un Samsung Galaxy S26 Ultra en píxeles CSS (1440×3120 a
+  // 3.5×). Debe coincidir con PHONE en background.js.
+  const PHONE = { w: 412, h: 891 };
+
+  async function openFloating() {
+    const pip = await window.documentPictureInPicture.requestWindow({ width: PHONE.w, height: PHONE.h });
+    const d = pip.document;
+    d.title = 'WhatsApp';
+    const style = d.createElement('style');
+    style.textContent = 'html,body{margin:0;height:100%;background:#111b21;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}';
+    d.head.append(style);
+    const frame = d.createElement('iframe');
+    frame.src = `${location.origin}/`;
+    frame.allow = 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; display-capture';
+    d.body.append(frame);
+    pip.addEventListener('pagehide', () => {
+      chrome.runtime.sendMessage({ cmd: 'restore-opener' }).catch(() => {});
+      location.reload();
+    }, { once: true });
+    coverTab(pip);
+    chrome.runtime.sendMessage({ cmd: 'hide-opener' }).catch(() => {}); // una sola ventana a la vista
+  }
+
+  // Mientras la flotante está abierta, esta pestaña mostraría la pantalla de
+  // WhatsApp "abierto en otra ventana · Usar aquí" (y pulsarla desconectaría
+  // la flotante). Se tapa con un aviso de una sola acción.
+  function coverTab(pip) {
+    const cover = document.createElement('div');
+    cover.id = 'wsp-float-cover';
+    cover.innerHTML = `
+      <div class="wsp-cover-box" role="dialog" aria-labelledby="wsp-cover-title">
+        <div class="wsp-cover-icon">📌</div>
+        <strong id="wsp-cover-title">WhatsApp está en la ventana flotante</strong>
+        <p>WhatsApp solo puede estar activo en un lugar a la vez, así que esta pestaña queda en pausa.</p>
+        <button type="button">Traer de vuelta a esta pestaña</button>
+      </div>`;
+    cover.querySelector('button').addEventListener('click', () => pip.close()); // pagehide → recarga
+    document.body.append(cover);
+  }
+
   // ---- Modo celular: un solo panel (lista O chat) en ventanas angostas ----
   const mobileMQ = matchMedia('(max-width: 760px)');
-  let forceList = false;   // el usuario pulsó "Volver"
-  let lastMain = null;
+  // El usuario pulsó "Volver". Solo se anula al tocar un chat de la lista o
+  // cuando el chat se cierra de verdad; NO por identidad del elemento, porque
+  // WhatsApp recrea #main al cambiar de sección y eso reabría el chat.
+  let forceList = false;
 
   function backIcon() {
     return '<svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>';
@@ -109,13 +161,261 @@
 
   function updateView() {
     root.dataset.wspMobile = String(mobileMQ.matches);
+    // Chat, canal o comunidad abiertos: #main o cualquier cabecera en el panel
+    // principal (las pantallas vacías de bienvenida no tienen cabecera).
+    const main = document.getElementById('main') || document.querySelector('[data-wsp-main="true"] header');
+    if (!main) forceList = false; // ya no hay chat abierto
+    const view = main && !forceList ? 'chat' : 'list';
+    if (view === 'chat' && root.dataset.wspView !== 'chat') focusComposer();
+    root.dataset.wspView = view;
+  }
+
+  // Modo celular: al pasar de la lista al chat, el cursor queda listo en
+  // "Escribe un mensaje" sin tener que hacer clic en la barra. (La lista y su
+  // buscador quedan ocultos, así que el foco no debe quedarse allí.)
+  function focusComposer(attempt = 0) {
+    if (!mobileMQ.matches || attempt > 10) return; // en escritorio WhatsApp ya lo hace solo
+    const box = document.querySelector('#main footer [contenteditable="true"]');
+    if (!box) { setTimeout(() => focusComposer(attempt + 1), 100); return; } // aún se está dibujando
+    requestAnimationFrame(() => { if (!box.contains(document.activeElement)) box.focus({ preventScroll: true }); });
+  }
+
+  // Cierra el chat en WhatsApp con Esc (atajo nativo) para que no quede
+  // seleccionado/sombreado en la lista. Varios intentos porque Esc cierra
+  // primero lo que esté encima (stickers, info del contacto).
+  function closeOpenChat(attempt = 0) {
     const main = document.getElementById('main');
-    if (main !== lastMain) { forceList = false; lastMain = main; } // se abrió otro chat
-    root.dataset.wspView = main && !forceList ? 'chat' : 'list';
+    if (!main || attempt > 2) return;
+    const target = main.querySelector('footer [contenteditable="true"]') || main;
+    if (target.focus) target.focus({ preventScroll: true });
+    pressEscape(target);
+    setTimeout(() => closeOpenChat(attempt + 1), 80);
+  }
+
+  function pressEscape(target) {
+    const opts = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
+    target.dispatchEvent(new KeyboardEvent('keydown', opts));
+    target.dispatchEvent(new KeyboardEvent('keyup', opts));
+  }
+
+  // ---- Retroceder / avanzar (botón ←, touchpad y botones del mouse) ----
+  let lastChatTitle = '';
+
+  function goBack() {
+    if (root.dataset.wspView === 'chat') {
+      const selected = document.querySelector('#pane-side [aria-selected="true"] span[title]');
+      if (selected) lastChatTitle = selected.title; // para poder "avanzar" después
+      forceList = true;
+      closeOpenChat(); // antes de ocultar: el foco no entra en elementos ocultos
+      root.dataset.wspView = 'list';
+      return true;
+    }
+    // Estados, Canales, Comunidades, Ajustes...: Esc vuelve a Chats.
+    const drawer = document.querySelector('[data-testid="drawer-left"]');
+    if (drawer && drawer.textContent.trim()) { // cerrado no tiene contenido
+      pressEscape(document.activeElement || document.body);
+      return true;
+    }
+    return false;
+  }
+
+  function goForward() {
+    if (root.dataset.wspView !== 'list') return false;
+    if (forceList && document.getElementById('main')) { // el chat sigue abierto detrás
+      forceList = false;
+      updateView();
+      return true;
+    }
+    const span = lastChatTitle && [...document.querySelectorAll('#pane-side span[title]')].find(s => s.title === lastChatTitle);
+    const row = span && (span.closest('[role="row"], [role="listitem"]') || span);
+    if (!row) return false;
+    for (const type of ['mousedown', 'mouseup', 'click']) row.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
+    return true;
+  }
+
+  // Burbuja breve que confirma el gesto (como la del navegador).
+  function flashGesture(back) {
+    let hint = document.getElementById('wsp-swipe-hint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = 'wsp-swipe-hint';
+      hint.setAttribute('aria-hidden', 'true');
+      document.body.append(hint);
+    }
+    hint.textContent = back ? '←' : '→';
+    hint.dataset.side = back ? 'left' : 'right';
+    hint.classList.remove('wsp-show');
+    void hint.offsetWidth; // reinicia la animación
+    hint.classList.add('wsp-show');
+  }
+
+  function navigate(back) {
+    if (back ? goBack() : goForward()) flashGesture(back);
+  }
+
+  function inHorizontalScroller(el) {
+    for (let n = el instanceof Element ? el : null; n && n !== root; n = n.parentElement) {
+      const ox = getComputedStyle(n).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 1) return true;
+    }
+    return false;
+  }
+
+  // Deslizar dos dedos en el touchpad llega como rueda horizontal: a la
+  // derecha (deltaX negativo) = atrás, a la izquierda = adelante. Un disparo
+  // por gesto; se ignora sobre carruseles con scroll horizontal propio.
+  const SWIPE_PX = 140;
+  let swipeX = 0;
+  let swipeUsed = false;
+  let swipeTimer = null;
+  window.addEventListener('wheel', e => {
+    if (!mobileMQ.matches || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    if (inHorizontalScroller(e.target)) return;
+    clearTimeout(swipeTimer);
+    swipeTimer = setTimeout(() => { swipeX = 0; swipeUsed = false; }, 350);
+    if (swipeUsed) return;
+    swipeX += e.deltaX;
+    if (Math.abs(swipeX) >= SWIPE_PX) {
+      swipeUsed = true;
+      navigate(swipeX < 0);
+    }
+  }, { passive: true });
+
+  // Botones laterales del mouse (atrás = 3, adelante = 4): en modo celular
+  // navegan dentro de WhatsApp en vez de salir de la página.
+  window.addEventListener('mouseup', e => {
+    if (!mobileMQ.matches || (e.button !== 3 && e.button !== 4)) return;
+    e.preventDefault();
+    navigate(e.button === 3);
+  });
+
+  // Ventanas pequeñas o medianas: los paneles y menús de WhatsApp con medidas
+  // de escritorio (stickers, multimedia, llamadas...) se salen de la ventana.
+  // - Capas flotantes (absolute/fixed): se desplazan lo justo para quedar
+  //   dentro (propiedad `translate`, que se suma a las animaciones de
+  //   WhatsApp sin pisarlas) y, si son más anchas que la ventana, se achican.
+  // - El resto: se les permite encoger (CSS [data-wsp-fit="inner"]).
+  // El contenido de un carrusel con scroll propio no se toca.
+  // ponytail: recorre todo #app (unos miles de nodos) tras cada ráfaga de
+  // cambios; si se nota lento, limitarlo a capas flotantes conocidas.
+  const FIT_MAX_WIDTH = 1100;
+  const FIT_EDGE = 8;
+  // Disyuntor: si WhatsApp y el encaje empiezan a "pelear" (muchas pasadas
+  // seguidas) o una pasada tarda demasiado, se pausa unos segundos. La
+  // extensión nunca debe poder trabar la página.
+  const FIT_BURST = 25;          // pasadas máximas…
+  const FIT_WINDOW_MS = 3000;    // …dentro de esta ventana de tiempo
+  const FIT_SLOW_MS = 60;        // una pasada más lenta que esto también pausa
+  const FIT_PAUSE_MS = 8000;
+  let fitRuns = [];
+  let fitPausedUntil = 0;
+
+  function fitToViewport(pass = 0) {
+    if (pass > 4) return;
+    if (innerWidth > FIT_MAX_WIDTH) { unfitAll(); return; }
+    const now = performance.now();
+    if (now < fitPausedUntil) return;
+    fitRuns = fitRuns.filter(t => now - t < FIT_WINDOW_MS);
+    fitRuns.push(now);
+    if (fitRuns.length > FIT_BURST) { fitPausedUntil = now + FIT_PAUSE_MS; fitRuns = []; return; }
+    const app = document.getElementById('app');
+    if (!app) return;
+    try { fitPass(app, pass); } finally {
+      if (performance.now() - now > FIT_SLOW_MS) fitPausedUntil = performance.now() + FIT_PAUSE_MS;
+    }
+  }
+
+  function fitPass(app, pass) {
+    const vw = root.clientWidth;
+    let changed = false;
+    // Las ya marcadas se recolocan (la ventana o el ancla pudieron moverse).
+    app.querySelectorAll('[data-wsp-fit="overlay"]').forEach(el => { if (nudgeIntoView(el, vw)) changed = true; });
+    let skip = null;
+    for (const el of app.getElementsByTagName('*')) {
+      if (skip && skip.contains(el)) continue;
+      if (!(el instanceof HTMLElement) || el.hasAttribute('data-wsp-fit')) continue;
+      const r = el.getBoundingClientRect();
+      if (r.width === 0 || r.right <= 0 || r.left >= vw) continue; // oculto o fuera
+      if (r.left >= -1 && r.right <= vw + 1) continue;             // cabe
+      if (insideCarousel(el, vw)) continue;
+      const cs = getComputedStyle(el);
+      if (cs.visibility === 'hidden' || cs.opacity === '0') continue; // capas invisibles: no traerlas a la vista
+      if (cs.position === 'absolute' || cs.position === 'fixed') {
+        el.setAttribute('data-wsp-fit', 'overlay');
+        nudgeIntoView(el, vw);
+      } else {
+        el.setAttribute('data-wsp-fit', 'inner');
+      }
+      skip = el; // sus hijos se reevalúan en la siguiente pasada, ya encajado
+      changed = true;
+    }
+    if (changed) requestAnimationFrame(() => fitToViewport(pass + 1));
+  }
+
+  function nudgeIntoView(el, vw) {
+    const tries = Number(el.dataset.wspTries || 0);
+    if (tries >= 4) return false; // si WhatsApp lo sigue moviendo, no pelear
+    let r = el.getBoundingClientRect();
+    if (r.width === 0 || r.right <= 0 || r.left >= vw) return false; // cerrándose/fuera: no traerla
+    let changed = false;
+    if (r.width > vw + 1) { // más ancha que la ventana: se achica (borde incluido)
+      el.style.setProperty('box-sizing', 'border-box', 'important');
+      el.style.setProperty('width', `${vw}px`, 'important');
+      el.style.setProperty('max-width', `${vw}px`, 'important');
+      el.dataset.wspSized = '1';
+      changed = true;
+      r = el.getBoundingClientRect();
+    }
+    const edge = r.width <= vw - FIT_EDGE * 2 ? FIT_EDGE : 0;
+    let fix = 0;
+    if (r.left < edge) fix = edge - r.left;
+    else if (r.right > vw - edge) fix = vw - edge - r.right;
+    if (Math.abs(fix) >= 1) {
+      const dx = Math.round(Number(el.dataset.wspDx || 0) + fix);
+      el.dataset.wspDx = String(dx);
+      el.style.setProperty('translate', `${dx}px 0`, 'important');
+      changed = true;
+    }
+    if (changed) el.dataset.wspTries = String(tries + 1); // solo cuentan los cambios reales
+    return changed;
+  }
+
+  // Al redimensionar, cada capa vuelve a tener sus intentos.
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('[data-wsp-tries]').forEach(el => { delete el.dataset.wspTries; });
+  }, { passive: true });
+
+  function unfitAll() {
+    document.querySelectorAll('[data-wsp-fit]').forEach(el => {
+      if (el.dataset.wspDx) { el.style.removeProperty('translate'); delete el.dataset.wspDx; }
+      if (el.dataset.wspSized) { ['width', 'max-width', 'box-sizing'].forEach(p => el.style.removeProperty(p)); delete el.dataset.wspSized; }
+      delete el.dataset.wspTries;
+      el.removeAttribute('data-wsp-fit');
+    });
+  }
+
+  // Carrusel legítimo = franja baja con scroll horizontal (pestañas de
+  // stickers, filtros Todos/No leídos): su contenido se respeta. Un
+  // contenedor alto (≥ media pantalla) que se desborda a los lados es un
+  // error de diseño en ventana pequeña (p. ej. Multimedia): se le quita el
+  // scroll lateral y su contenido se encaja.
+  function insideCarousel(el, vw) {
+    for (let n = el.parentElement; n && n !== root; n = n.parentElement) {
+      const ox = getComputedStyle(n).overflowX;
+      if (ox !== 'auto' && ox !== 'scroll') continue;
+      const r = n.getBoundingClientRect();
+      if (r.height < innerHeight / 2 && r.left >= -1 && r.right <= vw + 1) return true;
+      if (!n.hasAttribute('data-wsp-fit')) { // una sola vez: mover el scroll dispara re-render en WhatsApp
+        n.setAttribute('data-wsp-fit', 'noscroll');
+        n.scrollLeft = 0;
+      }
+      return false;
+    }
+    return false;
   }
 
   function ensureBackButton() {
-    const header = document.querySelector('#main header');
+    const header = document.querySelector('#main header, [data-wsp-main="true"] header');
     if (!header || header.querySelector('#wsp-back')) return;
     const btn = document.createElement('button');
     btn.id = 'wsp-back';
@@ -125,8 +425,7 @@
     btn.innerHTML = backIcon();
     btn.addEventListener('click', e => {
       e.stopPropagation(); // que no abra la info del contacto
-      forceList = true;
-      root.dataset.wspView = 'list';
+      goBack();
     });
     header.prepend(btn);
   }
@@ -231,6 +530,11 @@
     panel.querySelectorAll('[data-mode]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.mode === state.mode)));
     panel.dataset.mode = state.mode;
     panel.querySelector('#wsp-mode-hint').textContent = MODE_HINTS[state.mode];
+    const phone = mobileMQ.matches;
+    panel.querySelector('.wsp-phone').textContent = phone ? '🖥️ Volver a la vista normal' : '📱 Abrir como celular';
+    panel.querySelector('.wsp-phone-hint').textContent = phone
+      ? 'Toca un chat para abrirlo. Para volver a la lista usa ←, desliza dos dedos hacia la derecha en el touchpad o el botón "atrás" del mouse (a la izquierda: reabre el último chat).'
+      : 'Ancla WhatsApp al borde derecho de la pantalla, como un celular: lista y chat de uno en uno, con botón ← Volver.';
   }
 
   const MODE_HINTS = {
@@ -250,9 +554,26 @@
   function placeRailControl() {
     const trigger = document.getElementById('wsp-sidebar-mini-control');
     if (!trigger) return;
+
+    // La columna de la barra (hijo del layout que contiene la navegación) se
+    // oculta en modo celular mientras se ve un chat, como en el teléfono.
+    const layout = document.querySelector('[data-wsp-layout="true"]');
+    const nav = document.querySelector('[data-testid="navbar-primary-section"]');
+    const railColumn = layout && nav && [...layout.children].find(c => c.contains(nav));
+    if (railColumn && !railColumn.hasAttribute('data-wsp-rail')) railColumn.setAttribute('data-wsp-rail', 'true');
+
     const all = [...document.querySelectorAll('button, [role="button"], [aria-label], [title]')];
     const meta = all.find(el => /meta\s*ai/i.test(`${el.getAttribute('aria-label') || ''} ${el.getAttribute('title') || ''} ${el.textContent || ''}`));
-    if (!meta) return;
+    if (!meta) {
+      // En ventanas pequeñas WhatsApp oculta Meta AI y Canales: se coloca al
+      // final de la sección superior de la barra.
+      const primary = document.querySelector('[data-testid="navbar-primary-section"]');
+      if (!primary) return;
+      trigger.classList.add('wsp-in-rail', 'wsp-in-primary');
+      if (primary.lastElementChild !== trigger) primary.append(trigger);
+      return;
+    }
+    trigger.classList.remove('wsp-in-primary');
     const metaItem = meta.closest('button, [role="button"]') || meta;
 
     /* El wrapper directo de Meta AI es una fila angosta (flex-row) dedicada a
@@ -265,13 +586,6 @@
       rail = rail.parentElement;
     }
     if (!rail) return;
-
-    // La columna completa de la barra (hijo directo del layout principal) se
-    // oculta en modo celular mientras se ve un chat, como en el teléfono.
-    const layout = document.querySelector('[data-wsp-layout="true"]');
-    let railColumn = rail;
-    while (railColumn.parentElement && railColumn.parentElement !== layout && railColumn.parentElement.id !== 'app') railColumn = railColumn.parentElement;
-    if (railColumn.parentElement === layout && !railColumn.hasAttribute('data-wsp-rail')) railColumn.setAttribute('data-wsp-rail', 'true');
 
     trigger.classList.add('wsp-in-rail');
     if (railChild.nextSibling !== trigger) rail.insertBefore(trigger, railChild.nextSibling);
@@ -340,6 +654,13 @@
           <input id="wsp-collapsed" type="range" min="72" max="120" step="2">
         </div>
         <button type="button" class="wsp-reset">Restablecer valores</button>
+      </div>
+      <div class="wsp-section wsp-window-section"${IN_FRAME ? ' hidden' : ''}>
+        <span class="wsp-row-label">3. Ventana tipo celular</span>
+        <button type="button" class="wsp-phone"></button>
+        <p class="wsp-hint wsp-phone-hint"></p>
+        <button type="button" class="wsp-float">📌 Ventana flotante (siempre encima)</button>
+        <p class="wsp-hint wsp-float-hint">Queda encima de cualquier aplicación, aunque cambies de programa. Esta ventana se minimiza mientras tanto y vuelve sola al cerrar la flotante.</p>
       </div>`;
 
     document.body.append(trigger, panel);
@@ -370,6 +691,18 @@
     collapsed.addEventListener('change', () => save({ collapsed: clamp(collapsed.value, 72, 120) }));
     panel.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => save({ mode: btn.dataset.mode })));
     panel.querySelector('.wsp-reset').addEventListener('click', () => save({ ...DEFAULTS }));
+    // Solo el service worker puede mover la pestaña a otra ventana.
+    panel.querySelector('.wsp-phone').addEventListener('click', () => {
+      const msg = mobileMQ.matches
+        ? { cmd: 'desktop' }
+        : { cmd: 'phone', screen: { w: screen.availWidth, h: screen.availHeight, l: screen.availLeft, t: screen.availTop } };
+      chrome.runtime.sendMessage(msg).catch(() => {});
+    });
+    panel.querySelector('.wsp-float').addEventListener('click', () => {
+      openFloating().catch(() => {
+        panel.querySelector('.wsp-float-hint').textContent = 'Este navegador no permite ventanas flotantes (Picture-in-Picture). Usa "Abrir como celular".';
+      });
+    });
     // Captura + stopPropagation: Esc cierra solo el panel, no el chat abierto de WhatsApp.
     window.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !panel.hidden) { e.stopPropagation(); closePanel(); trigger.focus(); }
@@ -389,14 +722,20 @@
       placeRailControl();
       ensureBackButton();
       updateView();
+      fitToViewport();
     }, 120);
   }
 
-  mobileMQ.addEventListener('change', updateView);
+  mobileMQ.addEventListener('change', () => {
+    updateView();
+    updateUI();
+    scheduleDetection();
+  });
   // Tocar un chat de la lista (aunque sea el mismo que estaba abierto)
   // vuelve a mostrar la conversación.
   document.addEventListener('click', e => {
-    if (forceList && e.target instanceof Element && e.target.closest('#pane-side [role="row"], #pane-side [role="listitem"], #pane-side [role="gridcell"]')) {
+    if (forceList && e.target instanceof Element && e.target.closest('[role="row"], [role="listitem"], [role="gridcell"]')
+      && e.target.closest('#pane-side, [data-testid="drawer-left"]')) {
       forceList = false;
       setTimeout(updateView, 50);
     }
@@ -442,4 +781,23 @@
   startStructuralObserver();
   failsafeInterval = setInterval(checkFailsafe, 500);
   scheduleDetection();
+
+  // Ventana celular recién abierta: informa su área interior real para que
+  // el service worker la ajuste a 412×891 exactos (solo actúa en ventanas
+  // que él mismo abrió como celular).
+  // Se dispara al cargar y al pasar a modo celular (mover la pestaña a la
+  // ventana celular no recarga la página).
+  function reportFrame() {
+    if (IN_FRAME) return;
+    setTimeout(() => {
+      chrome.runtime.sendMessage({
+        cmd: 'phone-frame',
+        iw: innerWidth, ih: innerHeight,
+        fw: outerWidth - innerWidth, fh: outerHeight - innerHeight,
+        sh: screen.availHeight
+      }).catch(() => {});
+    }, 600);
+  }
+  reportFrame();
+  mobileMQ.addEventListener('change', () => { if (mobileMQ.matches) reportFrame(); });
 })();

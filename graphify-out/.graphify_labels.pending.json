@@ -1,9 +1,10 @@
 {
-  "0": "buildControls",
   "1": "manifest.json",
   "2": "default_icon",
-  "3": "scheduleDetection",
-  "4": "content.js",
-  "5": "icons",
-  "7": "popup.js"
+  "3": "buildControls",
+  "4": "markSidebar",
+  "5": "closeOpenChat",
+  "7": "popup.js",
+  "8": "background.js",
+  "11": "content.js"
 }

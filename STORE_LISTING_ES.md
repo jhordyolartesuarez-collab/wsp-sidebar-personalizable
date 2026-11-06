@@ -1,54 +1,107 @@
-# Ficha para Chrome Web Store
+# Ficha para Chrome Web Store (v1.2.6)
 
-## Nombre
+Textos listos para copiar y pegar en el panel de desarrolladores, en el mismo orden de las pestañas.
+
+---
+
+## Pestaña «Ficha de Play Store»
+
+### Nombre (está en el manifest; máx. 75)
 
 Chat Sidebar Adjuster for WhatsApp Web
 
-## Resumen corto (máx. 132 caracteres)
+### Resumen (máx. 132 caracteres)
 
-Personaliza el ancho y la vista compacta de la lista de chats de WhatsApp Web.
+Ajusta la lista de chats de WhatsApp Web, úsalo como en tu celular o en una ventana flotante siempre visible.
 
-## Descripción extensa
+### Descripción
 
-Chat Sidebar Adjuster ajusta visualmente la columna de la lista de chats de WhatsApp Web, sin tocar la conversación abierta ni la barra de accesos rápidos.
+Haz que WhatsApp Web se adapte a ti: elige cuánto espacio ocupa la lista de chats, úsalo en una ventana del tamaño de un celular o déjalo flotando encima de cualquier programa mientras trabajas.
 
-**Funciones principales:**
+★ LISTA DE CHATS A TU MEDIDA
+• Tres vistas: Fijo (lista completa), Iconos (solo fotos) y Auto (compacta, se abre sola al pasar el cursor).
+• Ancho exacto con controles deslizantes y vista previa al instante.
+• Panel guiado paso a paso, con una explicación de cada opción y botón «Restablecer valores».
+• Se abre desde un botón discreto en la barra lateral de WhatsApp Web.
 
-- **Ancho ajustable:** define el ancho de la lista de chats para el modo Fijo y para el estado expandido del modo Auto.
-- **Modo Fijo:** la lista mantiene siempre el ancho elegido.
-- **Modo Iconos:** la lista queda reducida a un ancho compacto configurable, mostrando solo los avatares.
-- **Modo Auto:** la lista permanece en su ancho compacto y se expande suavemente al acercar el cursor o al enfocar un elemento con el teclado; vuelve a contraerse al alejar el cursor.
-- **Ancho compacto configurable:** ajusta por separado el ancho reducido usado en los modos Iconos y Auto contraído.
-- **Preferencias persistentes:** los ajustes se guardan automáticamente y se restauran en cada sesión.
-- **Interfaz integrada:** el panel de ajustes y el icono de acceso se diseñaron para verse como parte natural de WhatsApp Web, sin colores llamativos ni elementos ajenos a su estética.
-- **Sin recopilación de datos:** no lee, guarda ni transmite mensajes, contactos ni ninguna información personal. Solo conserva las preferencias de visualización elegidas por el usuario.
-- **Proyecto independiente:** no afiliado, respaldado ni patrocinado por WhatsApp LLC o Meta Platforms, Inc.
+★ MODO CELULAR
+• «📱 Abrir como celular» pasa WhatsApp a una ventana del tamaño de un Samsung Galaxy S26 Ultra (412 × 891 px), anclada al borde derecho de la pantalla.
+• Una pantalla a la vez, como en el teléfono: la lista o el chat, a pantalla completa.
+• Botón ← Volver en cada chat, canal o comunidad.
+• Estados, Canales, Comunidades, stickers, multimedia, menús e información de contacto se adaptan al tamaño de la ventana.
+• El chat se abre en el mensaje más reciente y listo para escribir.
 
-## Categoría
+★ VENTANA FLOTANTE, SIEMPRE VISIBLE
+• «📌 Ventana flotante» deja WhatsApp encima de cualquier aplicación, aunque cambies de programa.
+• Una sola sesión: la ventana original se aparta sola y vuelve al cerrar la flotante.
+• Incluido en la extensión, sin instalar nada más.
 
-Productividad
+★ NAVEGACIÓN NATURAL
+• Desliza dos dedos a la derecha en el touchpad para volver a la lista (o de Estados/Canales a Chats); a la izquierda para reabrir el último chat.
+• También con los botones atrás/adelante del mouse.
 
-## Idioma principal
+★ PRIVADO POR DISEÑO
+• No lee, guarda ni envía mensajes, contactos, fotos ni historial.
+• Sin servidores externos, sin analítica y sin anuncios.
+• Solo guarda tus preferencias de visualización, en tu propio navegador.
+
+Proyecto independiente: no está afiliado, respaldado ni patrocinado por WhatsApp LLC ni Meta Platforms, Inc. «WhatsApp» es una marca de sus respectivos titulares y se usa solo para indicar compatibilidad.
+
+### Categoría
+
+Productividad → Comunicación
+
+### Idioma
 
 Español
 
-## Propósito único (Single Purpose)
+### Recursos gráficos (generados en `store/out/`)
 
-Personalizar visualmente el ancho y comportamiento de la lista de chats de WhatsApp Web.
+| Campo | Archivo | Medida |
+|---|---|---|
+| Icono de la tienda | `icons/icon128.png` | 128 × 128 |
+| Capturas de pantalla (1 a 5) | `captura-1-panel.png` … `captura-5-privacidad.png` | 1280 × 800 |
+| Mosaico promocional pequeño | `mosaico-440x280.png` | 440 × 280 |
 
-## Respuestas sugeridas para el formulario de revisión
+Para regenerarlos: sirve el repo (`python -m http.server`), abre `store/slides.html?s=1` … `?s=5` en una ventana de 1280×800 (y `?s=tile` en 440×280) y captura la vista.
 
-**Justificación del permiso `storage`:**
-Se usa exclusivamente para guardar tres preferencias de visualización del usuario (ancho general, ancho compacto y modo de vista) mediante `chrome.storage.sync`, de modo que persistan entre sesiones y dispositivos sincronizados. No se guarda ningún otro dato.
+---
 
-**Justificación del host permission (`https://web.whatsapp.com/*`):**
-Es el único dominio donde se inyecta el content script, necesario para poder leer la estructura visual de la página y aplicar los ajustes de ancho/modo sobre la columna de la lista de chats. La extensión no funciona ni se ejecuta en ningún otro sitio.
+## Pestaña «Prácticas de privacidad»
 
-**Uso de datos:**
-La extensión no recopila, transmite ni comparte datos de ningún tipo. Las únicas tres preferencias guardadas (ancho, ancho compacto y modo) permanecen en el almacenamiento local/sincronizado del propio navegador del usuario y nunca salen de él.
+### Propósito único
 
-**Uso remoto de código:**
-No se ejecuta código remoto. Todo el JavaScript y CSS de la extensión está empaquetado localmente en el propio paquete; no se cargan scripts ni recursos desde servidores externos.
+Adaptar la interfaz de WhatsApp Web al espacio de pantalla del usuario: ancho de la lista de chats, vista tipo celular y ventana flotante.
 
-**Declaración de privacidad:**
-Ver `PRIVACY.md`. La extensión no recopila mensajes, contactos, historial ni ningún dato personal; no existen servidores externos; no hay analítica ni publicidad.
+### Justificación del permiso `storage`
+
+Guarda únicamente preferencias de visualización: el ancho de la lista, el ancho compacto y el modo de vista (`chrome.storage.sync`); el tamaño del marco de la ventana para que la ventana celular mida exactamente 412 × 891 px (`chrome.storage.local`); y, mientras la ventana flotante está abierta, el estado de la ventana original para restaurarla al cerrar (`chrome.storage.session`). No se guarda ningún otro dato.
+
+### Justificación del permiso `declarativeNetRequestWithHostAccess`
+
+Se usa solo para la función «Ventana flotante». Una regla estática cambia la cabecera `X-Frame-Options` de `web.whatsapp.com` de `DENY` a `SAMEORIGIN` en cargas de tipo `sub_frame`, para que WhatsApp Web pueda mostrarse dentro de su propia ventana Picture-in-Picture (siempre encima). `SAMEORIGIN` mantiene bloqueado que terceros incrusten WhatsApp. No se leen, recopilan ni modifican mensajes ni otros datos.
+
+### Justificación del permiso de host (`https://web.whatsapp.com/*`)
+
+Es el único sitio donde se ejecuta la extensión. Hace falta para aplicar los ajustes visuales (ancho, modo celular, encaje de paneles y botón Volver) sobre la página de WhatsApp Web, y para que la regla de la ventana flotante actúe solo sobre ese dominio.
+
+### ¿Usas código remoto?
+
+No. Todo el JavaScript y CSS va incluido en el paquete; no se cargan scripts ni recursos desde servidores externos.
+
+### Uso de datos
+
+Marca que **no** se recopila ninguno de los tipos de datos de la lista. Marca las tres certificaciones:
+- No vendo ni transfiero datos de usuario a terceros, salvo en los casos de uso aprobados.
+- No uso ni transfiero datos de usuario para fines no relacionados con el propósito único del elemento.
+- No uso ni transfiero datos de usuario para determinar la solvencia crediticia ni para conceder préstamos.
+
+### URL de la política de privacidad
+
+https://github.com/jhordyolartesuarez-collab/wsp-sidebar-personalizable/blob/main/PRIVACY.md
+
+---
+
+## Pestaña «Paquete»
+
+Sube `dist/chat-sidebar-adjuster-v1.2.6.zip`. Contiene solo los archivos de la extensión, sin `test/`, `store/`, `graphify-out/` ni `.claude/`.

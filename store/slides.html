@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<!-- Imágenes para la Chrome Web Store. Se renderiza una diapositiva por
+     ?s=N (ver store/render.ps1). Maquetas con datos ficticios. -->
+<style>
+  :root { --bg:#0b141a; --panel:#111b21; --panel2:#202c33; --line:#2a3942; --text:#e9edef; --muted:#8696a0; --green:#21c063; --green2:#00a884; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, sans-serif; }
+  .slide { display: none; width: 1280px; height: 800px; position: relative; overflow: hidden;
+           background: radial-gradient(1200px 600px at 85% 20%, #12343a 0%, transparent 60%), radial-gradient(900px 500px at 0% 100%, #0f2a22 0%, transparent 60%), var(--bg); }
+  .slide.on { display: block; }
+  .copy { position: absolute; left: 72px; top: 0; bottom: 0; width: 440px; display: flex; flex-direction: column; justify-content: center; }
+  .tag { display: inline-block; align-self: flex-start; padding: 6px 12px; border-radius: 999px; background: rgba(33,192,99,.14); color: var(--green); font-weight: 600; font-size: 15px; margin-bottom: 18px; }
+  h1 { font-size: 44px; line-height: 1.12; margin: 0 0 18px; letter-spacing: -.5px; }
+  .lead { font-size: 19px; line-height: 1.5; color: #c3ccd1; margin: 0 0 26px; }
+  ul.points { list-style: none; padding: 0; margin: 0; display: grid; gap: 14px; }
+  ul.points li { display: flex; gap: 12px; font-size: 17px; line-height: 1.4; color: #d5dde1; }
+  ul.points li b { color: var(--text); }
+  .dot { flex: 0 0 26px; height: 26px; border-radius: 8px; background: rgba(33,192,99,.16); color: var(--green); display: grid; place-items: center; font-size: 14px; font-weight: 700; }
+  .stage { position: absolute; right: 56px; top: 50%; transform: translateY(-50%); }
+
+  /* Maqueta de la app de chat (escritorio) */
+  .app { width: 700px; height: 560px; border-radius: 16px; overflow: hidden; display: flex; background: var(--panel);
+         box-shadow: 0 30px 80px rgba(0,0,0,.55), 0 0 0 1px var(--line); }
+  .rail { width: 56px; background: var(--panel2); display: flex; flex-direction: column; align-items: center; gap: 18px; padding-top: 18px; }
+  .rail i { width: 26px; height: 26px; border-radius: 8px; background: #374248; display: block; }
+  .rail i.me { background: var(--green); }
+  .rail .gear { width: 34px; height: 34px; border-radius: 999px; background: rgba(33,192,99,.18); outline: 2px solid var(--green); display: grid; place-items: center; font-size: 16px; }
+  .list { width: 250px; border-right: 1px solid var(--line); padding: 14px 0; }
+  .list h3 { margin: 0 16px 12px; font-size: 20px; }
+  .search { margin: 0 14px 12px; height: 34px; border-radius: 10px; background: var(--panel2); }
+  .row { display: flex; gap: 12px; align-items: center; padding: 10px 16px; }
+  .row.sel { background: #2a3942; }
+  .av { flex: 0 0 42px; height: 42px; border-radius: 999px; display: grid; place-items: center; font-weight: 700; color: #0b141a; }
+  .meta b { display: block; font-size: 15px; }
+  .meta span { font-size: 13px; color: var(--muted); }
+  .chat { flex: 1; display: flex; flex-direction: column; background: #0b141a; }
+  .chead { height: 58px; background: var(--panel2); display: flex; align-items: center; gap: 12px; padding: 0 16px; }
+  .msgs { flex: 1; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+  .b { max-width: 70%; padding: 9px 12px; border-radius: 10px; font-size: 14px; line-height: 1.35; background: var(--panel2); }
+  .b.out { align-self: flex-end; background: #005c4b; }
+  .composer { height: 56px; margin: 0 12px 12px; border-radius: 28px; background: var(--panel2); display: flex; align-items: center; padding: 0 18px; color: var(--muted); font-size: 14px; }
+
+  /* Panel de la extensión */
+  .xpanel { width: 290px; padding: 16px; border-radius: 16px; background: #161717; border: 1px solid rgba(255,255,255,.1); box-shadow: 0 16px 40px rgba(0,0,0,.5); font-size: 14px; }
+  .xpanel .h { display: flex; justify-content: space-between; font-weight: 700; font-size: 15px; margin-bottom: 12px; }
+  .xpanel .lbl { color: var(--muted); margin: 10px 0 7px; display: flex; justify-content: space-between; }
+  .xpanel .val { color: var(--text); background: rgba(255,255,255,.06); border-radius: 6px; padding: 0 7px; }
+  .seg { display: flex; gap: 2px; padding: 2px; border-radius: 10px; background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.1); }
+  .seg span { flex: 1; text-align: center; padding: 6px; border-radius: 8px; color: var(--muted); }
+  .seg span.on { background: rgba(33,192,99,.14); color: var(--green); outline: 1px solid rgba(33,192,99,.35); }
+  .hint { color: var(--muted); font-size: 12.5px; margin: 7px 0 0; line-height: 1.4; }
+  .range { height: 4px; border-radius: 4px; background: #3b4a54; position: relative; margin: 8px 0 4px; }
+  .range::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: var(--p); border-radius: 4px; background: var(--green); }
+  .range::after { content: ""; position: absolute; left: calc(var(--p) - 7px); top: -5px; width: 14px; height: 14px; border-radius: 99px; background: var(--green); }
+  .btn { margin-top: 10px; padding: 9px; border-radius: 8px; text-align: center; font-weight: 600; }
+  .btn.pri { background: var(--green); color: #0b141a; }
+  .btn.sec { border: 1px solid rgba(255,255,255,.14); }
+
+  /* Ventana celular / flotante */
+  .win { border-radius: 14px; overflow: hidden; background: var(--panel); box-shadow: 0 30px 80px rgba(0,0,0,.6), 0 0 0 1px var(--line); }
+  .win .bar { height: 30px; background: #1b2329; display: flex; align-items: center; padding: 0 12px; font-size: 12px; color: var(--muted); gap: 8px; }
+  .win .bar .x { margin-left: auto; letter-spacing: 10px; }
+  .phone { width: 300px; height: 649px; } /* 412×891 a escala 0.73 */
+  .phone .screen { height: calc(100% - 30px); display: flex; flex-direction: column; }
+  .phone .chead .back { font-size: 22px; color: var(--text); }
+  .badge { position: absolute; white-space: nowrap; padding: 8px 14px; border-radius: 999px; background: var(--green); color: #0b141a; font-weight: 700; font-size: 14px; box-shadow: 0 8px 20px rgba(0,0,0,.4); }
+  .doc { width: 720px; height: 520px; border-radius: 14px; background: #f3f5f7; color: #1f2933; padding: 34px 40px; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+  .doc .l { height: 12px; border-radius: 6px; background: #d6dde3; margin: 14px 0; }
+  .doc h4 { margin: 0 0 18px; font-size: 22px; }
+  .swipe { position: absolute; display: flex; align-items: center; gap: 10px; color: var(--text); font-weight: 600; font-size: 15px; }
+  .swipe .pad { width: 120px; height: 78px; border-radius: 14px; border: 2px solid #3b4a54; position: relative; background: #111b21; }
+  .swipe .pad::before, .swipe .pad::after { content: ""; position: absolute; top: 24px; width: 18px; height: 18px; border-radius: 99px; background: var(--green); left: 36px; }
+  .swipe .pad::after { top: 44px; left: 40px; }
+  .arrow { font-size: 30px; color: var(--green); }
+  .priv { width: 620px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+  .card .ic { font-size: 30px; margin-bottom: 10px; }
+  .card b { display: block; font-size: 18px; margin-bottom: 6px; }
+  .card span { color: var(--muted); font-size: 15px; line-height: 1.45; }
+
+  /* Mosaico 440×280 */
+  .tile { display: none; width: 440px; height: 280px; padding: 30px; position: relative; overflow: hidden;
+          background: radial-gradient(400px 260px at 100% 0%, #12403f 0%, transparent 70%), var(--bg); }
+  .tile.on { display: block; }
+  .tile .logo { width: 64px; height: 64px; border-radius: 18px; background: rgba(33,192,99,.16); display: grid; place-items: center; }
+  .tile h2 { font-size: 27px; margin: 18px 0 6px; line-height: 1.15; }
+  .tile p { margin: 0; color: #c3ccd1; font-size: 15.5px; line-height: 1.4; }
+  .tile .mini { position: absolute; right: 26px; bottom: -40px; width: 120px; height: 230px; border-radius: 18px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); padding: 14px 10px; }
+  .tile .mini i { display: block; height: 18px; border-radius: 6px; background: #2a3942; margin-bottom: 10px; }
+  .tile .mini i:nth-child(odd) { width: 70%; }
+</style>
+</head><body>
+
+<!-- 1. Panel y modos -->
+<section class="slide" id="s1">
+  <div class="copy">
+    <span class="tag">Para WhatsApp Web</span>
+    <h1>La lista de chats, a tu medida</h1>
+    <p class="lead">Un botón discreto en la barra lateral abre un panel guiado, paso a paso.</p>
+    <ul class="points">
+      <li><span class="dot">1</span><span><b>Fijo, Iconos o Auto:</b> lista completa, solo fotos, o compacta que se abre al pasar el cursor.</span></li>
+      <li><span class="dot">2</span><span><b>Ancho exacto</b> con controles deslizantes y vista previa al instante.</span></li>
+      <li><span class="dot">↺</span><span><b>Restablecer</b> en un clic. Tus ajustes se guardan solos.</span></li>
+    </ul>
+  </div>
+  <div class="stage">
+    <div class="app">
+      <div class="rail"><i class="me"></i><i></i><i></i><i></i><span class="gear">⚙</span></div>
+      <div class="list">
+        <h3>Chats</h3><div class="search"></div>
+        <div class="row sel"><div class="av" style="background:#f6c177">AM</div><div class="meta"><b>Ana Morales</b><span>¿Nos vemos a las 6?</span></div></div>
+        <div class="row"><div class="av" style="background:#9ccfd8">LG</div><div class="meta"><b>Luis García</b><span>Listo, enviado 👍</span></div></div>
+        <div class="row"><div class="av" style="background:#c4a7e7">EQ</div><div class="meta"><b>Equipo Ventas</b><span>Reunión mañana</span></div></div>
+        <div class="row"><div class="av" style="background:#eb6f92">MR</div><div class="meta"><b>María Ríos</b><span>Foto</span></div></div>
+        <div class="row"><div class="av" style="background:#a6e3a1">PC</div><div class="meta"><b>Pedro Castillo</b><span>Gracias!</span></div></div>
+      </div>
+      <div class="chat"><div class="chead"><div class="av" style="background:#f6c177;width:36px;height:36px;flex-basis:36px">AM</div><b>Ana Morales</b></div>
+        <div class="msgs"><div class="b">Hola! ¿Terminaste el informe?</div><div class="b out">Sí, te lo paso en un rato</div><div class="b">¿Nos vemos a las 6?</div></div>
+        <div class="composer">Escribe un mensaje</div></div>
+    </div>
+    <div class="xpanel" style="position:absolute; left:380px; top:150px">
+      <div class="h"><span>Ajustar chats</span><span style="color:var(--muted)">×</span></div>
+      <div class="lbl">1. Elige cómo ver la lista</div>
+      <div class="seg"><span class="on">Fijo</span><span>Iconos</span><span>Auto</span></div>
+      <p class="hint">La lista siempre muestra nombres y mensajes con el ancho elegido.</p>
+      <div class="lbl">2. Ajusta el tamaño</div>
+      <div class="lbl" style="margin-top:4px">Ancho de la lista <span class="val">370px</span></div>
+      <div class="range" style="--p:43%"></div>
+      <div class="btn sec">Restablecer valores</div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Modo celular -->
+<section class="slide" id="s2">
+  <div class="copy">
+    <span class="tag">Modo celular</span>
+    <h1>WhatsApp como en tu teléfono</h1>
+    <p class="lead">Una ventana del tamaño de un Galaxy S26 Ultra, anclada al borde de la pantalla.</p>
+    <ul class="points">
+      <li><span class="dot">📱</span><span><b>Lista o chat, de uno en uno</b>, a pantalla completa.</span></li>
+      <li><span class="dot">←</span><span><b>Botón Volver</b> en cada chat, canal o comunidad.</span></li>
+      <li><span class="dot">⤢</span><span><b>Todo encaja:</b> stickers, multimedia y menús se adaptan a la ventana.</span></li>
+    </ul>
+  </div>
+  <div class="stage" style="right:120px">
+    <div class="win phone" style="position:absolute; right:250px; top:-325px; transform:scale(.92); transform-origin:top right; opacity:.85">
+      <div class="bar">Lista de chats<span class="x">– □ ×</span></div>
+      <div class="screen" style="background:var(--panel)">
+        <div class="list" style="width:auto;border:0">
+          <h3>Chats</h3><div class="search"></div>
+          <div class="row"><div class="av" style="background:#f6c177">AM</div><div class="meta"><b>Ana Morales</b><span>¿Nos vemos a las 6?</span></div></div>
+          <div class="row"><div class="av" style="background:#9ccfd8">LG</div><div class="meta"><b>Luis García</b><span>Listo, enviado 👍</span></div></div>
+          <div class="row"><div class="av" style="background:#c4a7e7">EQ</div><div class="meta"><b>Equipo Ventas</b><span>Reunión mañana</span></div></div>
+          <div class="row"><div class="av" style="background:#eb6f92">MR</div><div class="meta"><b>María Ríos</b><span>Foto</span></div></div>
+          <div class="row"><div class="av" style="background:#a6e3a1">PC</div><div class="meta"><b>Pedro Castillo</b><span>Gracias!</span></div></div>
+          <div class="row"><div class="av" style="background:#f9e2af">JT</div><div class="meta"><b>Julia Torres</b><span>Audio</span></div></div>
+        </div>
+      </div>
+    </div>
+    <div class="win phone" style="position:absolute; right:0; top:-325px">
+      <div class="bar">Chat<span class="x">– □ ×</span></div>
+      <div class="screen chat">
+        <div class="chead"><span class="back">←</span><div class="av" style="background:#f6c177;width:34px;height:34px;flex-basis:34px">AM</div><b>Ana Morales</b></div>
+        <div class="msgs"><div class="b">Hola! ¿Terminaste el informe?</div><div class="b out">Sí, te lo paso en un rato</div><div class="b">Perfecto 🙌</div><div class="b">¿Nos vemos a las 6?</div><div class="b out">¡Dale!</div></div>
+        <div class="composer">Escribe un mensaje</div>
+      </div>
+    </div>
+    <span class="badge" style="right:330px; top:250px">412 × 891 px</span>
+  </div>
+</section>
+
+<!-- 3. Ventana flotante -->
+<section class="slide" id="s3">
+  <div class="copy">
+    <span class="tag">Ventana flotante</span>
+    <h1>Siempre a la vista, mientras trabajas</h1>
+    <p class="lead">Ancla WhatsApp encima de cualquier programa: documentos, hojas de cálculo o reuniones.</p>
+    <ul class="points">
+      <li><span class="dot">📌</span><span><b>Siempre encima</b>, aunque cambies de aplicación.</span></li>
+      <li><span class="dot">1</span><span><b>Una sola sesión:</b> la ventana original se aparta sola y vuelve al cerrar.</span></li>
+      <li><span class="dot">✓</span><span><b>Incluido en la extensión</b>, sin instalar nada más.</span></li>
+    </ul>
+  </div>
+  <div class="stage" style="right:40px">
+    <div class="doc"><h4>Informe trimestral.docx</h4><div class="l" style="width:92%"></div><div class="l" style="width:80%"></div><div class="l" style="width:88%"></div><div class="l" style="width:60%"></div><div class="l" style="width:85%"></div><div class="l" style="width:75%"></div><div class="l" style="width:90%"></div><div class="l" style="width:50%"></div></div>
+    <div class="win phone" style="position:absolute; right:-10px; top:-70px; transform:scale(.88); transform-origin:top right">
+      <div class="bar">📌 Ventana flotante<span class="x">×</span></div>
+      <div class="screen chat">
+        <div class="chead"><span class="back">←</span><div class="av" style="background:#c4a7e7;width:34px;height:34px;flex-basis:34px">EQ</div><b>Equipo Ventas</b></div>
+        <div class="msgs"><div class="b">¿Alguien tiene las cifras de marzo?</div><div class="b out">Las estoy pasando al informe</div><div class="b">Genial, gracias</div></div>
+        <div class="composer">Escribe un mensaje</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. Gestos -->
+<section class="slide" id="s4">
+  <div class="copy">
+    <span class="tag">Navegación natural</span>
+    <h1>Vuelve atrás con un gesto</h1>
+    <p class="lead">Como en el celular, pero con tu touchpad o mouse.</p>
+    <ul class="points">
+      <li><span class="dot">→</span><span><b>Dos dedos a la derecha:</b> vuelve a la lista o de Estados a Chats.</span></li>
+      <li><span class="dot">←</span><span><b>A la izquierda:</b> reabre el último chat.</span></li>
+      <li><span class="dot">🖱</span><span><b>Botones atrás/adelante</b> del mouse, y el chat se abre listo para escribir.</span></li>
+    </ul>
+  </div>
+  <div class="stage" style="right:140px">
+    <div class="win phone" style="position:absolute; right:0; top:-325px">
+      <div class="bar">Chat<span class="x">– □ ×</span></div>
+      <div class="screen chat">
+        <div class="chead"><span class="back">←</span><div class="av" style="background:#9ccfd8;width:34px;height:34px;flex-basis:34px">LG</div><b>Luis García</b></div>
+        <div class="msgs"><div class="b">¿Viste el partido?</div><div class="b out">¡Qué golazo! ⚽</div><div class="b">Increíble</div></div>
+        <div class="composer">Escribe un mensaje<span style="margin-left:2px;color:var(--green)">|</span></div>
+      </div>
+    </div>
+    <div class="swipe" style="right:350px; top:-40px"><div class="pad"></div><span class="arrow">⟶</span><span>Volver</span></div>
+    <span class="badge" style="right:240px; top:-10px; width:44px; height:44px; padding:0; display:grid; place-items:center; font-size:22px">←</span>
+  </div>
+</section>
+
+<!-- 5. Privacidad -->
+<section class="slide" id="s5">
+  <div class="copy">
+    <span class="tag">Privado por diseño</span>
+    <h1>Tus mensajes son solo tuyos</h1>
+    <p class="lead">La extensión solo cambia cómo se ve WhatsApp Web. Nada sale de tu navegador.</p>
+  </div>
+  <div class="stage">
+    <div class="priv">
+      <div class="card"><div class="ic">🔒</div><b>No lee mensajes</b><span>Ni contactos, ni fotos, ni historial.</span></div>
+      <div class="card"><div class="ic">📡</div><b>Sin servidores</b><span>No envía datos a ningún sitio. Sin analítica ni anuncios.</span></div>
+      <div class="card"><div class="ic">⚙️</div><b>Solo tus ajustes</b><span>Ancho y modo de la lista, guardados en tu propio navegador.</span></div>
+      <div class="card"><div class="ic">🧩</div><b>Permisos mínimos</b><span>Solo funciona en web.whatsapp.com.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- Mosaico promocional 440×280 -->
+<section class="tile" id="tile">
+  <div class="logo"><svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#21c063" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 6A2.5 2.5 0 0 1 7 3.5h7A2.5 2.5 0 0 1 16.5 6v5A2.5 2.5 0 0 1 14 13.5H9.4l-3 2.4.3-2.5A2.5 2.5 0 0 1 4.5 11V6Z"/><circle cx="17.3" cy="16.7" r="2.6"/><path d="M17.3 12.9v.9M17.3 20.2v.9M21.4 16.7h-.9M14.1 16.7h-.9"/></svg></div>
+  <h2>Chat Sidebar<br>Adjuster</h2>
+  <p>Lista a tu medida, modo celular<br>y ventana flotante.</p>
+  <div class="mini"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+</section>
+
+<script>
+  const s = new URLSearchParams(location.search).get('s') || '1';
+  document.getElementById(s === 'tile' ? 'tile' : `s${s}`).classList.add('on');
+</script>
+</body></html>
