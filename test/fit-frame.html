@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8">
+<link rel="stylesheet" href="../content.css">
+<style>
+  body { margin: 0; height: 100vh; background: #111b21; color: #e9edef; font: 13px system-ui; }
+  #app { position: relative; height: 100vh; overflow: hidden; }
+  .box { background: #233138; border: 1px solid #3b4a54; }
+</style>
+<script>
+  // Stub mínimo de las APIs de extensión que usa content.js.
+  window.chrome = {
+    storage: { sync: { get: async d => d, set: async () => {} }, onChanged: { addListener() {} } },
+    runtime: { sendMessage: async () => {} }
+  };
+</script>
+</head><body>
+<div id="app">
+  <!-- 1. Menú de llamadas: anclado a un botón a la derecha, se sale por la derecha -->
+  <div id="call" class="box" style="position:absolute; left:300px; top:60px; width:260px; height:120px">Llamadas</div>
+  <!-- 2. Panel más ancho que la ventana (como el de stickers de escritorio) -->
+  <div id="wide" class="box" style="position:fixed; left:-150px; bottom:80px; width:600px; height:200px">Panel ancho</div>
+  <!-- 3. Menú adjuntar que se sale por la izquierda -->
+  <div id="attach" class="box" style="position:absolute; left:-30px; top:300px; width:180px; height:150px">Adjuntar</div>
+  <!-- 4. Carrusel legítimo (franja baja con scroll propio): no debe tocarse -->
+  <div id="carousel" style="position:absolute; top:10px; left:0; width:100%; height:40px; overflow-x:auto">
+    <div id="track" style="width:900px; height:30px" class="box">pestañas…</div>
+  </div>
+  <!-- 5. Contenedor alto con desborde lateral (como Multimedia) -->
+  <div id="tall" style="position:absolute; top:200px; left:0; width:100%; height:500px; overflow:auto">
+    <div id="tallInner" style="width:560px; height:800px" class="box">Multimedia</div>
+  </div>
+  <!-- 6. Capa que "pelea": cada vez que la movemos, vuelve a salirse y agrega un nodo -->
+  <div id="fighter" class="box" style="position:absolute; left:350px; top:480px; width:150px; height:40px">Peleona</div>
+</div>
+<script src="../content.js"></script>
+<script>
+  // La capa peleona simula un posicionador que reacciona a cualquier cambio.
+  const fighter = document.getElementById('fighter');
+  let fighterResets = 0;
+  new MutationObserver(() => {
+    if (!fighter.style.translate || fighterResets > 500) return;
+    fighterResets += 1;
+    fighter.style.removeProperty('translate'); // deshace el ajuste de la extensión
+    fighter.append(document.createElement('i')); // childList: vuelve a despertar a la extensión
+  }).observe(fighter, { attributes: true, attributeFilter: ['style'] });
+
+  setTimeout(() => {
+    const vw = document.documentElement.clientWidth;
+    const rect = id => document.getElementById(id).getBoundingClientRect();
+    const inside = (r, edge = 0) => r.left >= edge - 1 && r.right <= vw - edge + 1;
+    const checks = [
+      ['Ventana de prueba en modo celular (≤760px)', document.documentElement.dataset.wspMobile === 'true'],
+      ['Menú de llamadas queda dentro', inside(rect('call'), 8)],
+      ['Panel ancho se achica a la ventana', rect('wide').width <= vw + 1 && inside(rect('wide'))],
+      ['Menú adjuntar respeta el margen izquierdo', rect('attach').left >= 7],
+      ['Carrusel legítimo intacto', rect('track').width >= 900 && !document.getElementById('track').hasAttribute('data-wsp-fit')],
+      ['Contenedor alto sin scroll lateral', document.getElementById('tall').dataset.wspFit === 'noscroll'],
+      ['Contenido del contenedor alto encaja', rect('tallInner').width <= rect('tall').width + 1],
+      ['La capa peleona no traba la página (intentos acotados)', fighterResets < 20]
+    ];
+    const ok = checks.every(c => c[1]);
+    document.title = ok ? 'OK' : 'FALLA';
+    window.__results = { ok, vw, fighterResets, checks };
+    console.log('[fit-test]', JSON.stringify(window.__results));
+  }, 2500);
+</script>
+</body></html>

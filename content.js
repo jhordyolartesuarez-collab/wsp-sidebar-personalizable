@@ -282,19 +282,48 @@
     navigate(e.button === 3);
   });
 
-  // Modo celular: los paneles de WhatsApp con ancho fijo de escritorio
-  // (stickers, multimedia, menús...) se salen de la ventana. Se marcan y el
-  // CSS los encaja: los posicionados se anclan a los bordes, los demás se
-  // dejan encoger. El contenido de un carrusel con scroll propio no se toca.
+  // Ventanas pequeñas o medianas: los paneles y menús de WhatsApp con medidas
+  // de escritorio (stickers, multimedia, llamadas...) se salen de la ventana.
+  // - Capas flotantes (absolute/fixed): se desplazan lo justo para quedar
+  //   dentro (propiedad `translate`, que se suma a las animaciones de
+  //   WhatsApp sin pisarlas) y, si son más anchas que la ventana, se achican.
+  // - El resto: se les permite encoger (CSS [data-wsp-fit="inner"]).
+  // El contenido de un carrusel con scroll propio no se toca.
   // ponytail: recorre todo #app (unos miles de nodos) tras cada ráfaga de
   // cambios; si se nota lento, limitarlo a capas flotantes conocidas.
+  const FIT_MAX_WIDTH = 1100;
+  const FIT_EDGE = 8;
+  // Disyuntor: si WhatsApp y el encaje empiezan a "pelear" (muchas pasadas
+  // seguidas) o una pasada tarda demasiado, se pausa unos segundos. La
+  // extensión nunca debe poder trabar la página.
+  const FIT_BURST = 25;          // pasadas máximas…
+  const FIT_WINDOW_MS = 3000;    // …dentro de esta ventana de tiempo
+  const FIT_SLOW_MS = 60;        // una pasada más lenta que esto también pausa
+  const FIT_PAUSE_MS = 8000;
+  let fitRuns = [];
+  let fitPausedUntil = 0;
+
   function fitToViewport(pass = 0) {
-    if (!mobileMQ.matches || pass > 4) return;
+    if (pass > 4) return;
+    if (innerWidth > FIT_MAX_WIDTH) { unfitAll(); return; }
+    const now = performance.now();
+    if (now < fitPausedUntil) return;
+    fitRuns = fitRuns.filter(t => now - t < FIT_WINDOW_MS);
+    fitRuns.push(now);
+    if (fitRuns.length > FIT_BURST) { fitPausedUntil = now + FIT_PAUSE_MS; fitRuns = []; return; }
     const app = document.getElementById('app');
     if (!app) return;
+    try { fitPass(app, pass); } finally {
+      if (performance.now() - now > FIT_SLOW_MS) fitPausedUntil = performance.now() + FIT_PAUSE_MS;
+    }
+  }
+
+  function fitPass(app, pass) {
     const vw = root.clientWidth;
-    let skip = null;
     let changed = false;
+    // Las ya marcadas se recolocan (la ventana o el ancla pudieron moverse).
+    app.querySelectorAll('[data-wsp-fit="overlay"]').forEach(el => { if (nudgeIntoView(el, vw)) changed = true; });
+    let skip = null;
     for (const el of app.getElementsByTagName('*')) {
       if (skip && skip.contains(el)) continue;
       if (!(el instanceof HTMLElement) || el.hasAttribute('data-wsp-fit')) continue;
@@ -304,11 +333,58 @@
       if (insideCarousel(el, vw)) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility === 'hidden' || cs.opacity === '0') continue; // capas invisibles: no traerlas a la vista
-      el.setAttribute('data-wsp-fit', cs.position === 'absolute' || cs.position === 'fixed' ? 'overlay' : 'inner');
+      if (cs.position === 'absolute' || cs.position === 'fixed') {
+        el.setAttribute('data-wsp-fit', 'overlay');
+        nudgeIntoView(el, vw);
+      } else {
+        el.setAttribute('data-wsp-fit', 'inner');
+      }
       skip = el; // sus hijos se reevalúan en la siguiente pasada, ya encajado
       changed = true;
     }
     if (changed) requestAnimationFrame(() => fitToViewport(pass + 1));
+  }
+
+  function nudgeIntoView(el, vw) {
+    const tries = Number(el.dataset.wspTries || 0);
+    if (tries >= 4) return false; // si WhatsApp lo sigue moviendo, no pelear
+    let r = el.getBoundingClientRect();
+    if (r.width === 0 || r.right <= 0 || r.left >= vw) return false; // cerrándose/fuera: no traerla
+    let changed = false;
+    if (r.width > vw + 1) { // más ancha que la ventana: se achica (borde incluido)
+      el.style.setProperty('box-sizing', 'border-box', 'important');
+      el.style.setProperty('width', `${vw}px`, 'important');
+      el.style.setProperty('max-width', `${vw}px`, 'important');
+      el.dataset.wspSized = '1';
+      changed = true;
+      r = el.getBoundingClientRect();
+    }
+    const edge = r.width <= vw - FIT_EDGE * 2 ? FIT_EDGE : 0;
+    let fix = 0;
+    if (r.left < edge) fix = edge - r.left;
+    else if (r.right > vw - edge) fix = vw - edge - r.right;
+    if (Math.abs(fix) >= 1) {
+      const dx = Math.round(Number(el.dataset.wspDx || 0) + fix);
+      el.dataset.wspDx = String(dx);
+      el.style.setProperty('translate', `${dx}px 0`, 'important');
+      changed = true;
+    }
+    if (changed) el.dataset.wspTries = String(tries + 1); // solo cuentan los cambios reales
+    return changed;
+  }
+
+  // Al redimensionar, cada capa vuelve a tener sus intentos.
+  window.addEventListener('resize', () => {
+    document.querySelectorAll('[data-wsp-tries]').forEach(el => { delete el.dataset.wspTries; });
+  }, { passive: true });
+
+  function unfitAll() {
+    document.querySelectorAll('[data-wsp-fit]').forEach(el => {
+      if (el.dataset.wspDx) { el.style.removeProperty('translate'); delete el.dataset.wspDx; }
+      if (el.dataset.wspSized) { ['width', 'max-width', 'box-sizing'].forEach(p => el.style.removeProperty(p)); delete el.dataset.wspSized; }
+      delete el.dataset.wspTries;
+      el.removeAttribute('data-wsp-fit');
+    });
   }
 
   // Carrusel legítimo = franja baja con scroll horizontal (pestañas de
@@ -322,8 +398,10 @@
       if (ox !== 'auto' && ox !== 'scroll') continue;
       const r = n.getBoundingClientRect();
       if (r.height < innerHeight / 2 && r.left >= -1 && r.right <= vw + 1) return true;
-      n.setAttribute('data-wsp-fit', 'noscroll');
-      n.scrollLeft = 0;
+      if (!n.hasAttribute('data-wsp-fit')) { // una sola vez: mover el scroll dispara re-render en WhatsApp
+        n.setAttribute('data-wsp-fit', 'noscroll');
+        n.scrollLeft = 0;
+      }
       return false;
     }
     return false;
@@ -642,7 +720,6 @@
   }
 
   mobileMQ.addEventListener('change', () => {
-    if (!mobileMQ.matches) document.querySelectorAll('[data-wsp-fit]').forEach(el => el.removeAttribute('data-wsp-fit'));
     updateView();
     updateUI();
     scheduleDetection();

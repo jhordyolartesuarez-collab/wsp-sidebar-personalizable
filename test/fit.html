@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Prueba de encaje</title>
+<style>body{font:14px system-ui;margin:20px;background:#0b141a;color:#e9edef} iframe{border:1px solid #3b4a54} li.ok{color:#21c063} li.bad{color:#ff6b6b}</style>
+</head><body>
+<h1>Prueba de encaje (ventana de 420×820)</h1>
+<p>Sírvelo por HTTP desde la raíz del repo (<code>python -m http.server</code>) y abre <code>/test/fit.html</code>.</p>
+<div style="display:flex;gap:24px;align-items:flex-start">
+  <iframe id="f" src="fit-frame.html" width="420" height="820"></iframe>
+  <ul id="out"><li>Esperando resultados…</li></ul>
+</div>
+<script>
+  setTimeout(() => {
+    const r = document.getElementById('f').contentWindow.__results;
+    const out = document.getElementById('out');
+    out.innerHTML = r.checks.map(([name, pass]) => `<li class="${pass ? 'ok' : 'bad'}">${pass ? '✔' : '✘'} ${name}</li>`).join('')
+      + `<li>Reintentos de la capa peleona: ${r.fighterResets}</li>`;
+    document.title = r.ok ? 'OK' : 'FALLA';
+  }, 3200);
+</script>
+</body></html>

@@ -7,15 +7,15 @@
     "ast_empty": true
   },
   "content.js": {
-    "mtime": 1793937607.6906104,
-    "seen": 1793937609.55453,
-    "ast_hash": "c2aa8d936550b13096e6034ed23635c3",
+    "mtime": 1793937865.5716581,
+    "seen": 1793937897.5901434,
+    "ast_hash": "884e70b7cfd05ab0b699605a2181e96e",
     "semantic_hash": ""
   },
   "manifest.json": {
-    "mtime": 1793937608.308062,
-    "seen": 1793937609.554532,
-    "ast_hash": "ff750b23f7123c551abc20471604606e",
+    "mtime": 1793937896.4720733,
+    "seen": 1793937897.5901456,
+    "ast_hash": "6b279f1a621ce53a88d53005a6bd3c12",
     "semantic_hash": ""
   },
   "popup.js": {
@@ -94,6 +94,18 @@
     "mtime": 1793936813.6734874,
     "seen": 1793936886.88529,
     "ast_hash": "c32e619b666cdc5a2c739f1e08cc5b01",
+    "semantic_hash": ""
+  },
+  "test/fit-frame.html": {
+    "mtime": 1793937865.656252,
+    "seen": 1793937897.5901568,
+    "ast_hash": "738efcd59f86e9adb99ad482c1a22a04",
+    "semantic_hash": ""
+  },
+  "test/fit.html": {
+    "mtime": 1793937794.591304,
+    "seen": 1793937897.590158,
+    "ast_hash": "f61f279b51e559279fe8de0e91715120",
     "semantic_hash": ""
   }
 }

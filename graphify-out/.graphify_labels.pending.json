@@ -4,14 +4,7 @@
   "2": "default_icon",
   "3": "buildControls",
   "4": "markSidebar",
-  "5": "icons",
-  "6": "background",
   "7": "popup.js",
   "8": "background.js",
-  "9": "closeOpenChat",
-  "10": "declarative_net_request",
-  "11": "content.js",
-  "12": "applySettings",
-  "13": "updateUI",
-  "14": "fitToViewport"
+  "11": "content.js"
 }
