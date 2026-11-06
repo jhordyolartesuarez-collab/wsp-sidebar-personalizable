@@ -231,6 +231,11 @@
     panel.querySelectorAll('[data-mode]').forEach(btn => btn.setAttribute('aria-pressed', String(btn.dataset.mode === state.mode)));
     panel.dataset.mode = state.mode;
     panel.querySelector('#wsp-mode-hint').textContent = MODE_HINTS[state.mode];
+    const phone = mobileMQ.matches;
+    panel.querySelector('.wsp-phone').textContent = phone ? '🖥️ Volver a la vista normal' : '📱 Abrir como celular';
+    panel.querySelector('.wsp-phone-hint').textContent = phone
+      ? 'Toca un chat para abrirlo y usa ← para volver a la lista.'
+      : 'Pasa WhatsApp a una ventana pequeña: lista y chat de uno en uno, con botón ← Volver.';
   }
 
   const MODE_HINTS = {
@@ -340,6 +345,11 @@
           <input id="wsp-collapsed" type="range" min="72" max="120" step="2">
         </div>
         <button type="button" class="wsp-reset">Restablecer valores</button>
+      </div>
+      <div class="wsp-section">
+        <span class="wsp-row-label">3. Ventana tipo celular</span>
+        <button type="button" class="wsp-phone"></button>
+        <p class="wsp-hint wsp-phone-hint"></p>
       </div>`;
 
     document.body.append(trigger, panel);
@@ -370,6 +380,10 @@
     collapsed.addEventListener('change', () => save({ collapsed: clamp(collapsed.value, 72, 120) }));
     panel.querySelectorAll('[data-mode]').forEach(btn => btn.addEventListener('click', () => save({ mode: btn.dataset.mode })));
     panel.querySelector('.wsp-reset').addEventListener('click', () => save({ ...DEFAULTS }));
+    // Solo el service worker puede mover la pestaña a otra ventana.
+    panel.querySelector('.wsp-phone').addEventListener('click', () => {
+      chrome.runtime.sendMessage(mobileMQ.matches ? 'desktop' : 'phone').catch(() => {});
+    });
     // Captura + stopPropagation: Esc cierra solo el panel, no el chat abierto de WhatsApp.
     window.addEventListener('keydown', e => {
       if (e.key === 'Escape' && !panel.hidden) { e.stopPropagation(); closePanel(); trigger.focus(); }
@@ -392,7 +406,7 @@
     }, 120);
   }
 
-  mobileMQ.addEventListener('change', updateView);
+  mobileMQ.addEventListener('change', () => { updateView(); updateUI(); });
   // Tocar un chat de la lista (aunque sea el mismo que estaba abierto)
   // vuelve a mostrar la conversación.
   document.addEventListener('click', e => {

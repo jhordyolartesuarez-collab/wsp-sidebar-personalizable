@@ -319,3 +319,12 @@ html[data-wsp-mobile="true"] #wsp-back {
 }
 html[data-wsp-mobile="true"] #wsp-back:hover { background: var(--wsp-panel-hover); }
 html[data-wsp-mobile="true"] #wsp-back:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 1px; }
+
+/* v1.1.1 Botón de ventana tipo celular dentro del panel. */
+#wsp-sidebar-panel .wsp-phone {
+  width: 100%; padding: 8px; border: 0; border-radius: 8px;
+  background: var(--wsp-accent); color: #0b141a;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+#wsp-sidebar-panel .wsp-phone:hover { filter: brightness(1.08); }
+#wsp-sidebar-panel .wsp-phone:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 2px; }
