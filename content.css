@@ -428,3 +428,30 @@ html[data-wsp-mobile="true"] [data-wsp-fit="inner"] {
 }
 #wsp-float-cover button:hover { filter: brightness(1.08); }
 #wsp-float-cover button:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 3px; }
+/* v1.2.2 Gestos: en modo celular el deslizamiento horizontal del touchpad
+   navega dentro de WhatsApp (content.js), no el historial del navegador. */
+html[data-wsp-mobile="true"],
+html[data-wsp-mobile="true"] body { overscroll-behavior-x: none !important; }
+
+#wsp-swipe-hint {
+  position: fixed; top: 50%; z-index: 2147483646;
+  width: 44px; height: 44px; margin-top: -22px;
+  display: grid; place-items: center; border-radius: 999px;
+  background: var(--wsp-accent); color: #0b141a;
+  font: 600 22px/1 system-ui, sans-serif;
+  opacity: 0; pointer-events: none;
+}
+#wsp-swipe-hint[data-side="left"] { left: 12px; }
+#wsp-swipe-hint[data-side="right"] { right: 12px; }
+#wsp-swipe-hint.wsp-show { animation: wsp-swipe 520ms ease-out; }
+@keyframes wsp-swipe {
+  0% { opacity: 0; transform: scale(.7); }
+  30% { opacity: .95; transform: scale(1); }
+  100% { opacity: 0; transform: scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  #wsp-swipe-hint.wsp-show { animation: none; }
+}
+/* Contenedor alto que se desbordaba a los lados (p. ej. Multimedia): sin
+   scroll horizontal; el scroll vertical sigue igual. */
+html[data-wsp-mobile="true"] [data-wsp-fit="noscroll"] { overflow-x: hidden !important; }

@@ -169,11 +169,106 @@
     if (!main || attempt > 2) return;
     const target = main.querySelector('footer [contenteditable="true"]') || main;
     if (target.focus) target.focus({ preventScroll: true });
+    pressEscape(target);
+    setTimeout(() => closeOpenChat(attempt + 1), 80);
+  }
+
+  function pressEscape(target) {
     const opts = { key: 'Escape', code: 'Escape', keyCode: 27, which: 27, bubbles: true, cancelable: true };
     target.dispatchEvent(new KeyboardEvent('keydown', opts));
     target.dispatchEvent(new KeyboardEvent('keyup', opts));
-    setTimeout(() => closeOpenChat(attempt + 1), 80);
   }
+
+  // ---- Retroceder / avanzar (botón ←, touchpad y botones del mouse) ----
+  let lastChatTitle = '';
+
+  function goBack() {
+    if (root.dataset.wspView === 'chat') {
+      const selected = document.querySelector('#pane-side [aria-selected="true"] span[title]');
+      if (selected) lastChatTitle = selected.title; // para poder "avanzar" después
+      forceList = true;
+      closeOpenChat(); // antes de ocultar: el foco no entra en elementos ocultos
+      root.dataset.wspView = 'list';
+      return true;
+    }
+    // Estados, Canales, Comunidades, Ajustes...: Esc vuelve a Chats.
+    const drawer = document.querySelector('[data-testid="drawer-left"]');
+    if (drawer && drawer.textContent.trim()) { // cerrado no tiene contenido
+      pressEscape(document.activeElement || document.body);
+      return true;
+    }
+    return false;
+  }
+
+  function goForward() {
+    if (root.dataset.wspView !== 'list') return false;
+    if (forceList && document.getElementById('main')) { // el chat sigue abierto detrás
+      forceList = false;
+      updateView();
+      return true;
+    }
+    const span = lastChatTitle && [...document.querySelectorAll('#pane-side span[title]')].find(s => s.title === lastChatTitle);
+    const row = span && (span.closest('[role="row"], [role="listitem"]') || span);
+    if (!row) return false;
+    for (const type of ['mousedown', 'mouseup', 'click']) row.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, view: window }));
+    return true;
+  }
+
+  // Burbuja breve que confirma el gesto (como la del navegador).
+  function flashGesture(back) {
+    let hint = document.getElementById('wsp-swipe-hint');
+    if (!hint) {
+      hint = document.createElement('div');
+      hint.id = 'wsp-swipe-hint';
+      hint.setAttribute('aria-hidden', 'true');
+      document.body.append(hint);
+    }
+    hint.textContent = back ? '←' : '→';
+    hint.dataset.side = back ? 'left' : 'right';
+    hint.classList.remove('wsp-show');
+    void hint.offsetWidth; // reinicia la animación
+    hint.classList.add('wsp-show');
+  }
+
+  function navigate(back) {
+    if (back ? goBack() : goForward()) flashGesture(back);
+  }
+
+  function inHorizontalScroller(el) {
+    for (let n = el instanceof Element ? el : null; n && n !== root; n = n.parentElement) {
+      const ox = getComputedStyle(n).overflowX;
+      if ((ox === 'auto' || ox === 'scroll') && n.scrollWidth > n.clientWidth + 1) return true;
+    }
+    return false;
+  }
+
+  // Deslizar dos dedos en el touchpad llega como rueda horizontal: a la
+  // derecha (deltaX negativo) = atrás, a la izquierda = adelante. Un disparo
+  // por gesto; se ignora sobre carruseles con scroll horizontal propio.
+  const SWIPE_PX = 140;
+  let swipeX = 0;
+  let swipeUsed = false;
+  let swipeTimer = null;
+  window.addEventListener('wheel', e => {
+    if (!mobileMQ.matches || Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
+    if (inHorizontalScroller(e.target)) return;
+    clearTimeout(swipeTimer);
+    swipeTimer = setTimeout(() => { swipeX = 0; swipeUsed = false; }, 350);
+    if (swipeUsed) return;
+    swipeX += e.deltaX;
+    if (Math.abs(swipeX) >= SWIPE_PX) {
+      swipeUsed = true;
+      navigate(swipeX < 0);
+    }
+  }, { passive: true });
+
+  // Botones laterales del mouse (atrás = 3, adelante = 4): en modo celular
+  // navegan dentro de WhatsApp en vez de salir de la página.
+  window.addEventListener('mouseup', e => {
+    if (!mobileMQ.matches || (e.button !== 3 && e.button !== 4)) return;
+    e.preventDefault();
+    navigate(e.button === 3);
+  });
 
   // Modo celular: los paneles de WhatsApp con ancho fijo de escritorio
   // (stickers, multimedia, menús...) se salen de la ventana. Se marcan y el
@@ -194,7 +289,7 @@
       const r = el.getBoundingClientRect();
       if (r.width === 0 || r.right <= 0 || r.left >= vw) continue; // oculto o fuera
       if (r.left >= -1 && r.right <= vw + 1) continue;             // cabe
-      if (insideScroller(el, vw)) continue;
+      if (insideCarousel(el, vw)) continue;
       const cs = getComputedStyle(el);
       if (cs.visibility === 'hidden' || cs.opacity === '0') continue; // capas invisibles: no traerlas a la vista
       el.setAttribute('data-wsp-fit', cs.position === 'absolute' || cs.position === 'fixed' ? 'overlay' : 'inner');
@@ -204,14 +299,20 @@
     if (changed) requestAnimationFrame(() => fitToViewport(pass + 1));
   }
 
-  function insideScroller(el, vw) {
-    let n = el.parentElement;
-    for (let i = 0; n && i < 6; i += 1, n = n.parentElement) {
+  // Carrusel legítimo = franja baja con scroll horizontal (pestañas de
+  // stickers, filtros Todos/No leídos): su contenido se respeta. Un
+  // contenedor alto (≥ media pantalla) que se desborda a los lados es un
+  // error de diseño en ventana pequeña (p. ej. Multimedia): se le quita el
+  // scroll lateral y su contenido se encaja.
+  function insideCarousel(el, vw) {
+    for (let n = el.parentElement; n && n !== root; n = n.parentElement) {
       const ox = getComputedStyle(n).overflowX;
-      if (ox === 'auto' || ox === 'scroll') {
-        const r = n.getBoundingClientRect();
-        return r.left >= -1 && r.right <= vw + 1;
-      }
+      if (ox !== 'auto' && ox !== 'scroll') continue;
+      const r = n.getBoundingClientRect();
+      if (r.height < innerHeight / 2 && r.left >= -1 && r.right <= vw + 1) return true;
+      n.setAttribute('data-wsp-fit', 'noscroll');
+      n.scrollLeft = 0;
+      return false;
     }
     return false;
   }
@@ -227,9 +328,7 @@
     btn.innerHTML = backIcon();
     btn.addEventListener('click', e => {
       e.stopPropagation(); // que no abra la info del contacto
-      forceList = true;
-      closeOpenChat(); // antes de ocultar: el foco no entra en elementos ocultos
-      root.dataset.wspView = 'list';
+      goBack();
     });
     header.prepend(btn);
   }
@@ -337,7 +436,7 @@
     const phone = mobileMQ.matches;
     panel.querySelector('.wsp-phone').textContent = phone ? '🖥️ Volver a la vista normal' : '📱 Abrir como celular';
     panel.querySelector('.wsp-phone-hint').textContent = phone
-      ? 'Toca un chat para abrirlo y usa ← para volver a la lista.'
+      ? 'Toca un chat para abrirlo. Para volver a la lista usa ←, desliza dos dedos hacia la derecha en el touchpad o el botón "atrás" del mouse (a la izquierda: reabre el último chat).'
       : 'Ancla WhatsApp al borde derecho de la pantalla, como un celular: lista y chat de uno en uno, con botón ← Volver.';
   }
 

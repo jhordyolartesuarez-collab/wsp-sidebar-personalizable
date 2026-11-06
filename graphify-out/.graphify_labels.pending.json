@@ -1,13 +1,13 @@
 {
-  "0": "buildControls",
+  "0": "navigate",
   "1": "manifest.json",
   "2": "default_icon",
   "3": "buildControls",
   "4": "content.js",
   "5": "icons",
-  "6": "content.js",
+  "6": "background",
   "7": "popup.js",
   "8": "background.js",
   "9": "closeOpenChat",
-  "10": "fitToViewport"
+  "10": "declarative_net_request"
 }
