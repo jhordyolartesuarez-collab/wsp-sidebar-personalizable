@@ -328,3 +328,38 @@ html[data-wsp-mobile="true"] #wsp-back:focus-visible { outline: 2px solid var(--
 }
 #wsp-sidebar-panel .wsp-phone:hover { filter: brightness(1.08); }
 #wsp-sidebar-panel .wsp-phone:focus-visible { outline: 2px solid var(--wsp-focus); outline-offset: 2px; }
+/* ===== v1.1.2 Modo celular: cajones, stickers e info de contacto ===== */
+
+/* Canales, Estados, Comunidades, Ajustes, Archivados y Nuevo chat se abren
+   en drawer-left, que WhatsApp fija al 30%: en celular ocupa todo el ancho
+   junto a la barra. Su borde izquierdo era la línea gris residual. */
+html[data-wsp-mobile="true"] [data-testid="drawer-left"] {
+  flex: 1 1 auto !important;
+  width: auto !important;
+  max-width: none !important;
+  border-left: 0 !important;
+  border-inline-start: 0 !important;
+}
+/* Con un chat/canal abierto, el cajón (y su borde) no debe asomar. */
+html[data-wsp-mobile="true"][data-wsp-view="chat"] [data-testid="drawer-left"] { display: none !important; }
+
+/* Emojis, GIF y stickers: el panel nativo mide 560px fijos anclado al botón
+   y se salía por la izquierda. En celular ocupa el ancho de la ventana. */
+html[data-wsp-mobile="true"] div[role="application"]:has([data-testid="expressions-panel"]) {
+  left: 8px !important;
+  right: auto !important;
+  width: calc(100vw - 16px) !important;
+  max-width: none !important;
+  max-height: 65vh !important;
+}
+
+/* Info del contacto/grupo (drawer-right): pantalla completa sobre el chat
+   en lugar de comprimir la conversación. Se cierra con su propia X. */
+html[data-wsp-mobile="true"] [data-testid="drawer-right"]:has(> * > *) {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  max-width: none !important;
+  flex: none !important;
+  z-index: 250 !important;
+}

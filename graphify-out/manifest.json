@@ -7,15 +7,15 @@
     "ast_empty": true
   },
   "content.js": {
-    "mtime": 1793934180.6519015,
-    "seen": 1793934205.128362,
-    "ast_hash": "0c518e7f0b34974bc64da3e588b99cca",
+    "mtime": 1793935050.8054338,
+    "seen": 1793935180.755467,
+    "ast_hash": "9d06b93cfba74fa5d308e90ed277217e",
     "semantic_hash": ""
   },
   "manifest.json": {
-    "mtime": 1793934190.6903775,
-    "seen": 1793934205.1283638,
-    "ast_hash": "5f6287292245d8a1645a8f7d6ee8a05e",
+    "mtime": 1793935062.6823096,
+    "seen": 1793935180.7554688,
+    "ast_hash": "272a9a6a390b8fe959f7bce691e8a1b6",
     "semantic_hash": ""
   },
   "popup.js": {

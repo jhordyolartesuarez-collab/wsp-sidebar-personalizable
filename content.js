@@ -77,7 +77,9 @@
       const nr = node.getBoundingClientRect();
       const pd = getComputedStyle(parent);
       const horizontalLayout = (pd.display === 'flex' && pd.flexDirection === 'row') || pd.display === 'grid';
-      if (horizontalLayout && nr.width >= 220 && nr.width <= 650) {
+      // En ventana tipo celular WhatsApp deja la lista en ~30% (≈120px).
+      const minWidth = mobileMQ.matches ? 60 : 220;
+      if (horizontalLayout && nr.width >= minWidth && nr.width <= 650) {
         return { sidebar: node, layout: parent };
       }
       node = parent;
@@ -109,13 +111,15 @@
 
   function updateView() {
     root.dataset.wspMobile = String(mobileMQ.matches);
-    const main = document.getElementById('main');
-    if (main !== lastMain) { forceList = false; lastMain = main; } // se abrió otro chat
+    // Chat, canal o comunidad abiertos: #main o cualquier cabecera en el panel
+    // principal (las pantallas vacías de bienvenida no tienen cabecera).
+    const main = document.getElementById('main') || document.querySelector('[data-wsp-main="true"] header');
+    if (main !== lastMain) { forceList = false; lastMain = main; } // se abrió otro contenido
     root.dataset.wspView = main && !forceList ? 'chat' : 'list';
   }
 
   function ensureBackButton() {
-    const header = document.querySelector('#main header');
+    const header = document.querySelector('#main header, [data-wsp-main="true"] header');
     if (!header || header.querySelector('#wsp-back')) return;
     const btn = document.createElement('button');
     btn.id = 'wsp-back';
@@ -410,7 +414,8 @@
   // Tocar un chat de la lista (aunque sea el mismo que estaba abierto)
   // vuelve a mostrar la conversación.
   document.addEventListener('click', e => {
-    if (forceList && e.target instanceof Element && e.target.closest('#pane-side [role="row"], #pane-side [role="listitem"], #pane-side [role="gridcell"]')) {
+    if (forceList && e.target instanceof Element && e.target.closest('[role="row"], [role="listitem"], [role="gridcell"]')
+      && e.target.closest('#pane-side, [data-testid="drawer-left"]')) {
       forceList = false;
       setTimeout(updateView, 50);
     }
