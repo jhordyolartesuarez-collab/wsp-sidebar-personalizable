@@ -15,8 +15,8 @@ La barra vertical de accesos rápidos y la conversación abierta quedan fuera de
 - Botón de acceso discreto, insertado en la barra vertical de WhatsApp Web, debajo del icono de Meta AI.
 - Preferencias sincronizadas con `chrome.storage.sync`.
 - Sin analítica, anuncios, lectura ni transmisión de mensajes.
-- **Modo celular (v1.2.7):** desde el popup de la extensión, "📱 Abrir como celular" mueve la pestaña de WhatsApp Web a una ventana estrecha anclada al borde derecho de la pantalla, con el alto de la página autocalibrado al de un Samsung Galaxy S26 Ultra (891 px). Es una **ventana normal** de Chrome, no un popup: así la sesión de WhatsApp sobrevive al reinicio del navegador. Chrome no permite ventanas normales por debajo de ~500 px, así que el ancho visible queda en el mínimo del navegador (~484 px de página, todavía dentro del modo celular). En ventanas de 760 px o menos se muestra un solo panel (lista o chat) y la cabecera del chat incluye un botón **← Volver**. Al agrandar la ventana vuelve la vista normal.
-- **Ventana flotante (v1.2.0):** desde el panel, "📌 Ventana flotante" abre WhatsApp en una ventana Picture-in-Picture que se mantiene encima de cualquier aplicación. Al cerrarla, la pestaña original se recarga para retomar la sesión (WhatsApp admite una sola activa). Solo se abre con la sesión ya vinculada en la pestaña normal: la flotante carga WhatsApp en un iframe con almacenamiento aparte y una vinculación hecha ahí se perdería al cerrarla (dejando el dispositivo vinculado en el teléfono, pero sin sesión en el navegador).
+- **Modo celular (v1.1.0):** desde el popup de la extensión, "📱 Abrir como celular" mueve la pestaña de WhatsApp Web a una ventana del tamaño de un Samsung Galaxy S26 Ultra (412 × 891 px de área visible, autocalibrada), anclada al borde derecho de la pantalla. En ventanas de 760 px o menos se muestra un solo panel (lista o chat) y la cabecera del chat incluye un botón **← Volver**. Al agrandar la ventana vuelve la vista normal.
+- **Ventana flotante (v1.2.0):** desde el panel, "📌 Ventana flotante" abre WhatsApp en una ventana Picture-in-Picture que se mantiene encima de cualquier aplicación. Al cerrarla, la pestaña original se recarga para retomar la sesión (WhatsApp admite una sola activa).
 - **Gestos (v1.2.2):** en modo celular, dos dedos a la derecha en el touchpad (o el botón atrás del mouse) vuelven a la lista; a la izquierda reabren el último chat.
 - **Encaje automático:** en ventanas de hasta 1100 px, menús y paneles de WhatsApp que se salen de la ventana se recolocan solos (prueba: `test/fit.html`).
 
@@ -69,4 +69,4 @@ Para reportar un problema o sugerir una mejora, contacte al desarrollador en la 
 
 ## Versión
 
-1.2.7
+1.0.8
