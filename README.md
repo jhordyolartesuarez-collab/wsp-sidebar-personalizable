@@ -37,6 +37,15 @@ La barra vertical de accesos rápidos y la conversación abierta quedan fuera de
 5. Elija la vista: **Fijo**, **Iconos** o **Auto**.
 6. Cierre el panel con el botón × o con la tecla Escape.
 
+## Si la sesión no sobrevive al reinicio
+
+La extensión no lee ni borra el almacenamiento de WhatsApp: solo mueve su pestaña entre ventanas. Si al cerrar Chrome y volver a abrirlo aparece el QR mientras el teléfono sigue mostrando el dispositivo vinculado, la causa está fuera de la extensión. WhatsApp Web guarda la sesión en el almacenamiento del sitio (IndexedDB `wawc`), así que la borra o la invalida el navegador o la propia página:
+
+1. **«Mantener sesión iniciada».** Si esa casilla no está marcada al escanear el QR, WhatsApp cierra la sesión al cerrar la pestaña o el navegador. Cierre sesión desde el teléfono (*Dispositivos vinculados*), vuelva a vincular desde la pestaña principal y compruebe que la casilla quede marcada.
+2. **Borrado de datos al cerrar.** En `chrome://settings/content/siteData` y `chrome://settings/cookies`: si Chrome elimina los datos de los sitios guardados en el dispositivo al cerrar todas las ventanas, borra la sesión en cada salida. Desactive esa opción o añada `https://web.whatsapp.com` a «Siempre puedes usar cookies en estos sitios».
+3. **Políticas o programas de limpieza.** `chrome://policy` (`ClearBrowsingDataOnExit`, `CookiesSessionOnlyForUrls`) y antivirus con limpieza (CCleaner, Avast Cleanup) borran el almacenamiento del sitio sin pasar por Chrome.
+4. **Prueba de aislamiento.** Repita el ciclo en una ventana de invitado, sin extensiones, y por separado usando solo el modo celular. Si en la ventana de invitado también se pierde, no es la extensión; si solo se pierde después de usar la ventana flotante, la causa está en tener dos clientes de WhatsApp cargados a la vez sobre el mismo almacenamiento.
+
 ## Publicación en Chrome Web Store
 
 Suba el ZIP incluido desde el panel de desarrolladores. Complete ficha, capturas, categoría y datos del desarrollador (ver `STORE_LISTING_ES.md`). La extensión solicita `storage`, `declarativeNetRequestWithHostAccess` (solo para la ventana flotante) y acceso a `https://web.whatsapp.com/*`.
@@ -69,4 +78,4 @@ Para reportar un problema o sugerir una mejora, contacte al desarrollador en la 
 
 ## Versión
 
-1.2.7
+1.2.8

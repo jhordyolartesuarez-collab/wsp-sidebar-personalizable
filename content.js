@@ -157,7 +157,7 @@
       <div role="dialog" aria-labelledby="wsp-login-title">
         <div class="wsp-login-icon">🔗</div>
         <strong id="wsp-login-title">Vincula WhatsApp en la pestaña principal</strong>
-        <p>La ventana flotante usa un almacenamiento aparte: la sesión que vincules aquí se pierde al cerrarla.</p>
+        <p>La ventana flotante usa un almacenamiento aparte: la sesión que vincules aquí se pierde al cerrarla. Vincula en la pestaña principal y deja marcada «Mantener sesión iniciada» al escanear el QR.</p>
         <button type="button">Volver a la pestaña principal</button>
       </div>`;
     cover.querySelector('button').addEventListener('click', () => pip.close());
@@ -744,7 +744,7 @@
     });
     panel.querySelector('.wsp-float').addEventListener('click', () => {
       if (isUnlinked()) {
-        panel.querySelector('.wsp-float-hint').textContent = 'Vincula WhatsApp primero en esta pestaña: la sesión iniciada dentro de la ventana flotante no se guarda al cerrarla.';
+        panel.querySelector('.wsp-float-hint').textContent = 'Vincula primero en esta pestaña y deja marcada «Mantener sesión iniciada» junto al QR: la sesión iniciada dentro de la ventana flotante no se guarda al cerrarla.';
         return;
       }
       openFloating().catch(() => {
