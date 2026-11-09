@@ -26,7 +26,7 @@ Este almacenamiento se usa exclusivamente para conservar las preferencias visual
 
 Además, solo para que las ventanas funcionen bien:
 
-- `chrome.storage.local` guarda el tamaño del marco de la ventana (bordes y barra de título, en px) para que la ventana celular mida exactamente 412 × 891 px.
+- `chrome.storage.local` guarda el tamaño del marco de la ventana (bordes, barra de título, pestañas y barra de direcciones, en px) para ajustar el alto de la ventana celular al de la pantalla de un Galaxy S26 Ultra (891 px). El ancho lo limita Chrome, que no permite ventanas normales por debajo de ~500 px.
 - `chrome.storage.session` guarda temporalmente si una ventana es la ventana celular y el estado de la ventana original mientras la ventana flotante está abierta; se borra al cerrar el navegador.
 
 ## Permisos utilizados
