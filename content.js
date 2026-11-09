@@ -112,67 +112,23 @@
   // 3.5×). Debe coincidir con PHONE en background.js.
   const PHONE = { w: 412, h: 891 };
 
-  // WhatsApp dibuja el QR para vincular (contenedor div[data-ref]) cuando este
-  // navegador no tiene sesión.
-  function isUnlinked() {
-    return !!document.querySelector('div[data-ref], [data-testid="qrcode"], canvas[aria-label*="QR" i]');
-  }
-
   async function openFloating() {
     const pip = await window.documentPictureInPicture.requestWindow({ width: PHONE.w, height: PHONE.h });
     const d = pip.document;
     d.title = 'WhatsApp';
     const style = d.createElement('style');
-    style.textContent = `html,body{margin:0;height:100%;background:#111b21;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}
-      #wsp-login-cover{position:fixed;inset:0;z-index:2;display:grid;place-items:center;padding:24px;background:#111b21;color:#e9edef;font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center}
-      #wsp-login-cover[hidden]{display:none}
-      #wsp-login-cover .wsp-login-icon{font-size:34px;margin-bottom:6px}
-      #wsp-login-cover strong{display:block;font-size:17px;margin-bottom:8px}
-      #wsp-login-cover p{max-width:320px;margin:0 auto 16px;color:#8696a0}
-      #wsp-login-cover button{padding:10px 18px;border:0;border-radius:999px;background:#21c063;color:#0b141a;font:inherit;font-weight:600;cursor:pointer}`;
+    style.textContent = 'html,body{margin:0;height:100%;background:#111b21;overflow:hidden}iframe{border:0;width:100%;height:100%;display:block}';
     d.head.append(style);
     const frame = d.createElement('iframe');
     frame.src = `${location.origin}/`;
     frame.allow = 'clipboard-read; clipboard-write; microphone; camera; autoplay; fullscreen; display-capture';
     d.body.append(frame);
-    guardLogin(pip, frame);
     pip.addEventListener('pagehide', () => {
       chrome.runtime.sendMessage({ cmd: 'restore-opener' }).catch(() => {});
       location.reload();
     }, { once: true });
     coverTab(pip);
     chrome.runtime.sendMessage({ cmd: 'hide-opener' }).catch(() => {}); // una sola ventana a la vista
-  }
-
-  // La flotante carga WhatsApp en un iframe, con su propio contexto de
-  // almacenamiento. Si ahí aparece la pantalla de vincular, lo que se vincule
-  // se guarda en ese contexto y se pierde al cerrar la ventana: el teléfono
-  // seguiría mostrando el dispositivo vinculado y el navegador pediría QR otra
-  // vez. Por eso se tapa y se manda a vincular en la pestaña principal.
-  function guardLogin(pip, frame) {
-    const cover = pip.document.createElement('div');
-    cover.id = 'wsp-login-cover';
-    cover.hidden = true;
-    cover.innerHTML = `
-      <div role="dialog" aria-labelledby="wsp-login-title">
-        <div class="wsp-login-icon">🔗</div>
-        <strong id="wsp-login-title">Vincula WhatsApp en la pestaña principal</strong>
-        <p>La ventana flotante usa un almacenamiento aparte: la sesión que vincules aquí se pierde al cerrarla.</p>
-        <button type="button">Volver a la pestaña principal</button>
-      </div>`;
-    cover.querySelector('button').addEventListener('click', () => pip.close());
-    pip.document.body.append(cover);
-
-    const check = () => {
-      let unlinked = false;
-      try {
-        unlinked = !!frame.contentDocument?.querySelector('div[data-ref], [data-testid="qrcode"], canvas[aria-label*="QR" i]');
-      } catch { /* el iframe aún no está listo */ }
-      cover.hidden = !unlinked;
-    };
-    const timer = setInterval(check, 1000);
-    frame.addEventListener('load', check);
-    pip.addEventListener('pagehide', () => clearInterval(timer), { once: true });
   }
 
   // Mientras la flotante está abierta, esta pestaña mostraría la pantalla de
@@ -743,10 +699,6 @@
       chrome.runtime.sendMessage(msg).catch(() => {});
     });
     panel.querySelector('.wsp-float').addEventListener('click', () => {
-      if (isUnlinked()) {
-        panel.querySelector('.wsp-float-hint').textContent = 'Vincula WhatsApp primero en esta pestaña: la sesión iniciada dentro de la ventana flotante no se guarda al cerrarla.';
-        return;
-      }
       openFloating().catch(() => {
         panel.querySelector('.wsp-float-hint').textContent = 'Este navegador no permite ventanas flotantes (Picture-in-Picture). Usa "Abrir como celular".';
       });
@@ -842,9 +794,7 @@
         cmd: 'phone-frame',
         iw: innerWidth, ih: innerHeight,
         fw: outerWidth - innerWidth, fh: outerHeight - innerHeight,
-        sh: screen.availHeight,
-        sw: screen.availWidth,
-        sl: screen.availLeft
+        sh: screen.availHeight
       }).catch(() => {});
     }, 600);
   }
